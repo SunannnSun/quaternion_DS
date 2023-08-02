@@ -56,7 +56,7 @@ disp(value(A));
 
 
 % Test the trained DS 
-N_test = N +300;
+N_test = N + 300;
 
 A_train = value(A);
 % q_test = q_train(2);
@@ -78,9 +78,9 @@ for n=2:N_test
 end
 
 while true
-    tranimate(R_train, 'fps', 1/dt, 'nsteps', N)
+    tranimate(R_train, 'fps', 1/dt/2, 'nsteps', N)
     figure;
-    tranimate(R_test, 'fps', 1/dt, 'nsteps', N_test)
+    tranimate(R_test, 'fps', 1/dt/2, 'nsteps', N_test)
 end
 
 
