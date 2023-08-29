@@ -31,7 +31,7 @@ def plot_rotated_axes(ax, r , offset=(0, 0, 0), scale=1):
                 va="center", ha="center")
     
     plt.tight_layout()
-    plt.show()
+    
 
 
 def animate_rotated_axes(ax, R_list, scale=1):
@@ -57,11 +57,11 @@ def animate_rotated_axes(ax, R_list, scale=1):
 
 
     def _animate(i):
-        r = R_list[i-1]
+        r = R_list[i]
 
-        for i, (line, c) in enumerate(zip(lines, colors)):
+        for axis, (line, c) in enumerate(zip(lines, colors)):
             line_ = np.zeros((2, 3))
-            line_[1, i] = scale
+            line_[1, axis] = scale
             line_rot_ = r.apply(line_)
             line.set_data_3d([line_rot_[0, 0], line_rot_[1, 0]], [line_rot_[0, 1], line_rot_[1, 1]], [line_rot_[0, 2], line_rot_[1, 2]])
 
@@ -71,7 +71,7 @@ def animate_rotated_axes(ax, R_list, scale=1):
 
 
     anim = animation.FuncAnimation(fig, _animate, init_func=_init,
-                                frames=len(R_list), interval=30, blit=False, repeat=True)
+                                frames=len(R_list), interval=2000/len(R_list), blit=False, repeat=True)
     
     
     plt.tight_layout()

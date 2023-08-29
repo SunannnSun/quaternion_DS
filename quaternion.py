@@ -2,19 +2,64 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 
-from util import plot_tools
+from util import plot_tools, optimize_tools
 
+
+def canonical_quat(q):
+    """
+    Force all quaternions to have positive scalar part; necessary to ensure proper propagation in DS
+    """
+    if (q[-1] < 0):
+        return -q
+    else:
+        return q
 
 
 
 if __name__ == "__main__":
+
+
+    N = 50
+    dt = 0.1  # unit time
+    ang_vel = np.pi/6
+
+    w_axis = np.array([1, 0, 0]) 
+    q_train = [R.identity()]
+    w_train = [w_axis * ang_vel]
+
+    for i in range(N):
+        q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
+        q_train.append(q_next)
+        w_train.append(w_axis * ang_vel * (N-i)/N)
+
+
+    
+    q_att = q_train[-1]
+    q_now = q_train[0]
+
+
+    # print(q_att.as_quat())
+    # print(q_att.inv().as_quat())
+    # print( (q_now * q_att.inv()).as_quat())
+
+
+
+    A = optimize_tools.optimize_single_system(q_train, w_train, q_att)
+
+    q_test = [R.identity()]
+
+    w_test = []
+
+    for i in range(N):
+        q_diff = (q_test[i] * q_att.inv()).as_quat()
         
-    r0 = R.identity()
-    r1 = R.from_euler("ZYX", [90, -30, 0], degrees=True)  # intrinsic
-    r2 = R.from_euler("zyx", [90, -30, 0], degrees=True)  # extrinsic
-    r_list = [r0, r1, r2]
+        w_pred = A @ canonical_quat(q_diff)[0:3]
+        w_test.append(w_pred)
 
+        q_next =  R.from_rotvec(w_test[i] * dt) * q_test[i]
+        q_test.append(q_next)
 
+    
 
 
     fig = plt.figure()
@@ -24,7 +69,9 @@ if __name__ == "__main__":
     ax.set_aspect("equal", adjustable="box")
 
 
+    plot_tools.animate_rotated_axes(ax, q_test)
 
-    plot_tools.animate_rotated_axes(ax, r_list)
+    # plot_tools.plot_rotated_axes(ax, rotations[0])
+    # plot_tools.plot_rotated_axes(ax, rotations[1])
 
-    # plot_rotated_axes(ax, r1)
+    plt.show()
