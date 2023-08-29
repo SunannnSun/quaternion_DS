@@ -1,1 +1,0 @@
-addpath rtb common smtb

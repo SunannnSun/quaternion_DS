@@ -80,6 +80,26 @@ def animate_rotated_axes(ax, R_list, scale=1):
 
 
 
+def set_axes_equal(ax: plt.Axes):
+    """Set 3D plot axes to equal scale.
+    https://stackoverflow.com/questions/13685386/how-to-set-the-equal-aspect-ratio-for-all-axes-x-y-z
+    """
+    limits = np.array([
+        ax.get_xlim3d(),
+        ax.get_ylim3d(),
+        ax.get_zlim3d(),
+    ])
+    origin = np.mean(limits, axis=1)
+    radius = 0.5 * np.max(np.abs(limits[:, 1] - limits[:, 0]))
+    _set_axes_radius(ax, origin, radius)
+
+
+
+def _set_axes_radius(ax, origin, radius):
+    x, y, z = origin
+    ax.set(xlim=(x - radius, x + radius), ylim=(y - radius, y + radius), zlim=(z - radius, z + radius))
+
+
 
 
 if __name__ == "__main__":
