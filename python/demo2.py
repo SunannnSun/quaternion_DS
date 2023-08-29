@@ -95,6 +95,7 @@ def init():
 
     return lines
 
+
 # animation function.  This will be called sequentially with the frame number
 def animate(i):
     # we'll step two time-steps per frame.  This leads to nice results.
