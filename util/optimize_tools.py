@@ -17,28 +17,22 @@ def optimize_single_system(q_train, w_train, q_att):
     N = len(w_train)
     M = 3
 
-
     A = cp.Variable((M, M), symmetric=True)
 
     constraints = []
     constraints += [A << 0]
-    # constraints += [A.T + A << -0.001 * np.eye(M)] # alternative 
-
 
     objective = 0
-    for i in np.arange(1,N):
+
+    for i in range(N):
         q_diff = (q_train[i] * q_att.inv()).as_quat()
 
         w_pred = A @ canonical_quat(q_diff)[0:3]
 
-        objective = objective + cp.norm(w_pred- w_train[i], 2)**2
+        objective +=cp.norm(w_pred- w_train[i], 2)**2
 
     problem = cp.Problem(cp.Minimize(objective), constraints)
     problem.solve(solver=cp.MOSEK, verbose=True)
-    
-    print(problem.status )
-    print(A.value)
-
 
     return A.value
 

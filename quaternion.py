@@ -18,7 +18,6 @@ def canonical_quat(q):
 
 if __name__ == "__main__":
 
-
     N = 50
     dt = 0.1  # unit time
     ang_vel = np.pi/6
@@ -30,24 +29,15 @@ if __name__ == "__main__":
     for i in range(N):
         q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
         q_train.append(q_next)
-        w_train.append(w_axis * ang_vel * (N-i)/N)
+        w_train.append(w_axis * ang_vel * (N-i)/N)  #decaying velocity approaching zero near attractor
 
-
-    
     q_att = q_train[-1]
-    q_now = q_train[0]
-
-
-    # print(q_att.as_quat())
-    # print(q_att.inv().as_quat())
-    # print( (q_now * q_att.inv()).as_quat())
-
 
 
     A = optimize_tools.optimize_single_system(q_train, w_train, q_att)
 
-    q_test = [R.identity()]
 
+    q_test = [R.identity()]
     w_test = []
 
     for i in range(N):
