@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 
 from util import plot_tools, optimize_tools
-from util.q_gmm import q_gmm as q_gmm_class
-
 
 
 def canonical_quat(q):
@@ -28,37 +26,19 @@ if __name__ == "__main__":
     q_train = [R.identity()]
     w_train = [w_axis * ang_vel]
 
-    assignment_arr = np.zeros((N+1, ), dtype=int)
-
-    for i in range(int(N/2)):
-        assignment_arr[i+1] = 0
-        q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
-        q_train.append(q_next)
-        w_train.append(w_axis * ang_vel * (N-i)/N)  
-
-    w_axis = np.array([0, 1, 0]) 
-    for i in np.arange(int(N/2), N):
-        assignment_arr[i] = 1
+    for i in range(N):
         q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
         q_train.append(q_next)
         w_train.append(w_axis * ang_vel * (N-i)/N)  #decaying velocity approaching zero near attractor
 
-
     q_att = q_train[-1]
 
-    qGMM = q_gmm_class(q_train)
-    qGMM.cluster(assignment_arr)
-    qGMM.extract_param(q_train, assignment_arr)
+
+    A = optimize_tools.optimize_single_system(q_train, w_train, q_att)
+
+    print(A)
 
 
-    q_normal = qGMM.q_normal_arr[0]
-
-    q_normal.logProb(q_train)
-
-
-
-    """
-    
     q_test = [R.identity()]
     w_test = []
 
@@ -78,8 +58,6 @@ if __name__ == "__main__":
     q_mean = r.mean()
     # R.mean(q_test)
 
-    """
-
 
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d", proj_type="ortho")
@@ -87,11 +65,8 @@ if __name__ == "__main__":
     ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
     ax.set_aspect("equal", adjustable="box")
 
-    plot_tools.animate_rotated_axes(ax, q_train)
+    plot_tools.animate_rotated_axes(ax, q_test)
 
-    # plot_tools.plot_rotated_axes(ax, q_train[0])
-    # plot_tools.plot_rotated_axes(ax, q_att)
-    # plot_tools.plot_rotated_axes(ax, q_mean)
-    # plot_tools.plot_rotated_axes(ax, rotations[1])
+
 
     plt.show()
