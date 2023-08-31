@@ -12,16 +12,23 @@ def parallel_transport(x, y, v):
     parallel transport a vector u from space defined by x to a new space defined by y
     """
 
-    u = riem_log(x, y)
-    u_norm = np.linalg.norm(u)
-    u_dir = (u / u_norm)[:, np.newaxis]
+    # M = v.shape[0]
+    # u = riem_log(x, y)
+    # u_norm = np.linalg.norm(u)
+    # u_dir = (u / u_norm)[:, np.newaxis]
+    # A = np.sin(u_norm) *  -x[:, np.newaxis] @ u_dir.T + np.cos(u_norm) * u_dir @ u_dir.T + (np.eye(M) - u_dir@u_dir.T)
+    # A = np.eye(M) - np.sin()
+    # u1 = A @ v
+    # u1 = u1[:, 0]
+    # return A @ v
 
+    log_xy = riem_log(x, y)
+    log_yx = riem_log(y, x)
+    d_xy = unsigned_angle(x, y)
 
-    A = np.sin(u_norm) *  -x[:, np.newaxis] @ u_dir.T
-    + np.cos(u_norm) * u_dir @ u_dir.T
-    + (np.eye(4) - u_dir@u_dir.T)
+    u = v[:, 0] - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
 
-    return A @ v
+    return u
 
 
 
