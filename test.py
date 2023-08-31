@@ -52,10 +52,12 @@ Verify the stability in Tangent Space
 
 """
 Verify if dq in tangent space is equivalent to dq in quaternion space
+
+@note you can scale the angular velocity in the tangent space by the time dt
 """
 
 
-A = -1 * np.eye(4)
+A = -0.5 * np.eye(4)
 dt = 0.5
 
 # q_curr_q = canonical_quat(R.identity().as_quat())
@@ -67,7 +69,8 @@ q_att_q = canonical_quat(R.from_euler('xyz', [50, 0, 20], degrees=True).as_quat(
 
 
 q_curr_t = riem_log(q_att_q, q_curr_q)[:, np.newaxis]
-d_q_t = A @ q_curr_t  * dt
+w = A @ q_curr_t  
+d_q_t = w * dt
 q_next_t = q_curr_t + d_q_t
 q_next_t = riem_exp(q_att_q, q_next_t)
 q_next_1 = R.from_quat(q_next_t).as_euler('xyz', degrees=True)
@@ -75,18 +78,27 @@ q_next_1 = R.from_quat(q_next_t).as_euler('xyz', degrees=True)
 
 
 
-d_q_q = parallel_transport(q_att_q, q_curr_q, d_q_t)
+w_new = parallel_transport(q_att_q, q_curr_q, w)
+d_q_q = w_new * dt
 q_next_2 = riem_exp(q_curr_q, d_q_q)
 q_next_2 = R.from_quat(q_next_2).as_euler('xyz', degrees=True)
 
-# d_q_q = R.from_quat(d_q_q)
 
-# d_q_q = R.from_quat(q_att_q).inv() * R.from_quat(d_q_q)
 
-# print(d_q_q.as_euler('xyz', degrees=True))
 
-# q_next_q = d_q_q * R.from_quat(q_curr_q)
-# q_next_2 = q_next_q.as_euler('xyz', degrees=True)
+d_q_q_q = R.from_quat(riem_exp(q_curr_q, d_q_q)) * R.from_quat(q_curr_q).inv()
+
+# print(d_q_q_q.as_quat())
+
+# d_q_q_q_e = parallel_transport(q_curr_q, q_id_q, d_q_q[:, np.newaxis])
+
+# print( riem_exp(q_id_q, d_q_q_q_e)    )
+
+
+
+q_next_3 = d_q_q_q * R.from_quat(q_curr_q)
+q_next_3 = q_next_3.as_euler('xyz', degrees=True)
+
 
 c= 1
 

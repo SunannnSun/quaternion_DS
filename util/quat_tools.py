@@ -26,7 +26,12 @@ def parallel_transport(x, y, v):
     log_yx = riem_log(y, x)
     d_xy = unsigned_angle(x, y)
 
-    u = v[:, 0] - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
+    if v.ndim == 2:
+        u = v[:, 0] - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
+
+    elif v.ndim == 1:
+        u = v - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
+
 
     return u
 

@@ -10,7 +10,7 @@ Quaternion-DS
 
 8/31
 - ~~verify if system stable in tangent space~~
-- verify the equivalence between tan and quat
+- ~~verify the equivalence between tan and quat~~
 
 
 8/29 

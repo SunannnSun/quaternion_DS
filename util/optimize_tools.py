@@ -61,18 +61,34 @@ def optimize_single_quat_system(q_train, w_train, q_att):
 
     objective = 0
 
-    for i in range(N):
-        
-        q_i = canonical_quat(q_train[i].as_quat())
-        q_diff = riem_log(q_att, q_i)[:, np.newaxis]
-        w_pred = A @ q_diff
+    for i in range(N-1):
+        q_curr_q = canonical_quat(q_train[i].as_quat())
+
+        q_curr_t = riem_log(q_att, q_curr_q)[:, np.newaxis]
+
+        w_pred = A @ q_curr_t 
 
 
-        w_i = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
-        w_diff = riem_log(q_att, w_i)[:, np.newaxis]
+        q_next_q = canonical_quat(q_train[i+1].as_quat())
+        w_curr_t = riem_log(q_curr_q, q_next_q)
+
+        w_curr_t = parallel_transport(q_curr_q, q_att, w_curr_t)[:, np.newaxis]
 
 
-        objective += cp.norm(w_pred - w_diff, 2)**2
+
+
+        # w_curr_q = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
+
+        # w_curr_t = riem_log(q_curr_q, w_curr_q)[:, np.newaxis]
+
+        # w_curr_t = parallel_transport(q_curr_q, q_att, w_curr_t)[:, np.newaxis]
+
+
+
+
+
+
+        objective += cp.norm(w_pred - w_curr_t, 2)**2
 
   
 

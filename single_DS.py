@@ -20,7 +20,7 @@ def canonical_quat(q):
 if __name__ == "__main__":
 
     N = 50
-    dt = 0.1  # unit time
+    dt = 0.2  # unit time
     ang_vel = np.pi/6
 
     w_axis = np.array([1, 0, 0]) 
@@ -34,32 +34,30 @@ if __name__ == "__main__":
 
     q_att = q_train[-1]
     
-    A = optimize_tools.optimize_single_quat_system(q_train, w_train, q_att)
+    A = optimize_tools.optimize_single_quat_system(q_train[0:-1], w_train[0:-1], q_att)
 
     print(A)
 
 
-    q_init = R.from_euler('xyz', [52, 50, 30], degrees=True)
-    
-    q_test = [R.identity()]
+    q_init = R.from_euler('xyz', [12, 150, 130], degrees=True)
+    # q_init = R.identity()
+
+
+    q_test = [q_init]
     w_test = []
 
     q_att = canonical_quat(q_att.as_quat())
 
-    for i in range(N):
-        q_i =  canonical_quat(q_test[i].as_quat())
-        q_diff = riem_log(q_att, q_i)[:, np.newaxis]
-        w_pred = A @ q_diff  # in tangent space
+    for i in range(N+200):
+        q_curr_q =  canonical_quat(q_test[i].as_quat())
+        q_curr_t = riem_log(q_att, q_curr_q)[:, np.newaxis]
+        w_pred = A @ q_curr_t  
 
+        w_new = parallel_transport(q_att, q_curr_q, w_pred)
 
-        w_test.append(riem_exp(q_att, w_pred)) # in quat space
+        q_next = riem_exp(q_curr_q, w_new * dt)
 
-        d_q = R.from_quat(w_test[i]).as_rotvec()
-
-        # d_q = R.from_quat(w_test[i]).as_rotvec() * dt
-        q_next = R.from_rotvec(d_q) * q_test[i]
-
-        q_test.append(q_next)
+        q_test.append(R.from_quat(q_next))
 
     
 
@@ -71,8 +69,8 @@ if __name__ == "__main__":
     ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
     ax.set_aspect("equal", adjustable="box")
 
-    # plot_tools.animate_rotated_axes(ax, q_test)
-    plot_tools.animate_rotated_axes(ax, q_train)
+    plot_tools.animate_rotated_axes(ax, q_test)
+    # plot_tools.animate_rotated_axes(ax, q_train)
 
 
     plt.show()
