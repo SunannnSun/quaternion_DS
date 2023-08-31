@@ -1,7 +1,7 @@
 import numpy as np
 import cvxpy as cp
 
-
+from util.quat_tools import *
 
 def canonical_quat(q):
     """
@@ -35,6 +35,52 @@ def optimize_single_system(q_train, w_train, q_att):
     problem.solve(solver=cp.MOSEK, verbose=True)
 
     return A.value
+
+
+
+
+def optimize_single_quat_system(q_train, w_train, q_att):
+
+    q_att = canonical_quat(q_att.as_quat())
+
+    N = len(w_train)
+    M = 4
+
+    A = cp.Variable((M, M), symmetric=True)
+
+    constraints = []
+    constraints += [A << 0]
+
+    objective = 0
+
+    for i in range(N):
+        
+        w_i = canonical_quat(R.from_rotvec(w_train[i]).as_quat()).reshape(-1, 1)
+
+        q_i = canonical_quat(q_train[i].as_quat())
+
+
+        q_diff = riem_log(q_att, q_i).reshape(-1, 1)
+
+        w_pred = A @ q_diff
+
+
+        objective += cp.norm(w_pred - riem_log(q_att, w_i), 2)**2
+
+        # q_diff = (q_train[i] * q_att.inv()).as_quat()
+
+        # w_pred = A @ canonical_quat(q_diff)[0:3]
+
+        # objective +=cp.norm(w_pred- w_train[i], 2)**2
+
+    problem = cp.Problem(cp.Minimize(objective), constraints)
+    problem.solve(solver=cp.MOSEK, verbose=True)
+
+    return A.value
+
+
+
+
 
 
 

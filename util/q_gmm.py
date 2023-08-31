@@ -2,77 +2,6 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 
-def unsigned_angle(x, y):
-
-    dotProduct = np.dot(y, x)
-    cosAngle = dotProduct / (np.linalg.norm(x) * np.linalg.norm(y))
-    angle = np.arccos(np.clip(cosAngle, -1, 1))
-
-    return angle
-
-
-
-def riem_log(x, y):
-    """
-    x is the point of tangency
-    """
-
-    angle = unsigned_angle(x, y).reshape(-1, 1) 
-    tanDir = y - np.dot(y, x).reshape(-1, 1) * x 
-
-    if y.ndim == 1:
-        if np.linalg.norm(tanDir) == 0:
-            return tanDir
-        
-        if angle == np.pi:
-            angle = np.pi - 0.0001
-
-    v = angle * tanDir / np.linalg.norm(tanDir, axis=1, keepdims=True)
-    
-    return v
-
-
-
-def riem_cov(q_list, q_mean):
-    M = 4
-
-    q_mean = canonical_quat(q_mean.as_quat())
-    scatter = np.zeros((M, M))
-    N = len(q_list)
-    for i in range(N):
-        q_i = canonical_quat(q_list[i].as_quat())
-        log_q = riem_log(q_mean, q_i).reshape(-1, 1)
-        scatter  += log_q @ log_q.T
-    
-    cov = scatter/N
-
-    return cov
-
-
-
-
-def canonical_quat(q):
-    """
-    Force all quaternions to have positive scalar part; necessary to ensure proper propagation in DS
-    """
-    if (q[-1] < 0):
-        return -q
-    else:
-        return q
-    
-
-
-def list_to_arr(self, q_list):
-
-    N = len(q_list)
-    M = 4
-
-    q_arr = np.zeros((N, M))
-
-    for i in range(N):
-        q_arr[i, :] = canonical_quat(q_list[i].as_quat())
-
-    return q_arr
     
 
 
@@ -154,7 +83,7 @@ class q_normal:
         q_diff = riem_log(self.mu, q_arr)
 
         logProb = np.zeros((N, ))
-        
+
         logProb += -1/2 * M * np.log(2 * np.pi)
         logProb += -1/2 * np.linalg.det(self.sigma)
         logProb += -1/2 * np.sum( q_diff.T * (self.sigma @ q_diff.T), axis= 0) #vectorize quadratic function

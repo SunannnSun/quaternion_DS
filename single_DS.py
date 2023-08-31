@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 
 from util import plot_tools, optimize_tools
+from util.quat_tools import *
 
 
 def canonical_quat(q):
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     q_att = q_train[-1]
 
 
-    A = optimize_tools.optimize_single_system(q_train, w_train, q_att)
+    A = optimize_tools.optimize_single_quat_system(q_train, w_train, q_att)
 
     print(A)
 
@@ -42,21 +43,31 @@ if __name__ == "__main__":
     q_test = [R.identity()]
     w_test = []
 
+    q_att = canonical_quat(q_att.as_quat())
+
     for i in range(N):
-        q_diff = (q_test[i] * q_att.inv()).as_quat()
-        
-        w_pred = A @ canonical_quat(q_diff)[0:3]
+
+        q_i =  canonical_quat(q_test[i].as_quat())
+
+        q_diff = riem_log(q_att, q_i).reshape(-1, 1)
+
+        w_pred = A @ q_diff
+
         w_test.append(w_pred)
 
+        
         q_next =  R.from_rotvec(w_test[i] * dt) * q_test[i]
+
+        # q_diff = (q_test[i] * q_att.inv()).as_quat()
+        
+        # w_pred = A @ canonical_quat(q_diff)[0:3]
+        # w_test.append(w_pred)
+
+        # q_next =  R.from_rotvec(w_test[i] * dt) * q_test[i]
         q_test.append(q_next)
 
     
-    # r = R.from_quat(q_test)
-    rotations = [canonical_quat(q.as_quat()) for q in q_test]
-    r = R.from_quat(rotations)
-    q_mean = r.mean()
-    # R.mean(q_test)
+
 
 
     fig = plt.figure()
@@ -65,8 +76,16 @@ if __name__ == "__main__":
     ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
     ax.set_aspect("equal", adjustable="box")
 
-    plot_tools.animate_rotated_axes(ax, q_test)
+    plot_tools.animate_rotated_axes(ax, q_train)
 
 
 
     plt.show()
+
+
+
+        # # r = R.from_quat(q_test)
+    # rotations = [canonical_quat(q.as_quat()) for q in q_test]
+    # r = R.from_quat(rotations)
+    # q_mean = r.mean()
+    # # R.mean(q_test)
