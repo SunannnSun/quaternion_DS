@@ -1,6 +1,30 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
+def parallel_transport(x, y, v):
+    """
+    @param x quat representation
+    @param y quat representation
+
+    @param v vector in tangent space
+
+
+    parallel transport a vector u from space defined by x to a new space defined by y
+    """
+
+    u = riem_log(x, y)
+    u_norm = np.linalg.norm(u)
+    u_dir = (u / u_norm)[:, np.newaxis]
+
+
+    A = np.sin(u_norm) *  -x[:, np.newaxis] @ u_dir.T
+    + np.cos(u_norm) * u_dir @ u_dir.T
+    + (np.eye(4) - u_dir@u_dir.T)
+
+    return A @ v
+
+
+
 
 
 def unsigned_angle(x, y):
@@ -18,8 +42,11 @@ def unsigned_angle(x, y):
     x = x / np.linalg.norm(x)
     if y.ndim == 1:
         y = y / np.linalg.norm(y)
-    elif y.ndim == 2:
+    elif y.ndim == 2 and y.shape[1] > 1:
         y = y / np.linalg.norm(y, axis=1, keepdims=True)
+    else:
+        y = (y / np.linalg.norm(y, axis=0, keepdims=False))[:, 0]
+
 
     dotProduct = np.dot(y, x) 
 
@@ -43,8 +70,10 @@ def riem_log(x, y):
     x = x / np.linalg.norm(x)
     if y.ndim == 1:
         y = y / np.linalg.norm(y)
-    elif y.ndim == 2:
+    elif y.ndim == 2 and y.shape[1] > 1:
         y = y / np.linalg.norm(y, axis=1, keepdims=True)
+    else:
+        y = (y / np.linalg.norm(y, axis=0, keepdims=False))[:, 0]
     
     angle = unsigned_angle(x, y) 
 
@@ -73,7 +102,13 @@ def riem_log(x, y):
 def riem_exp(x, v):
     """
     x is the point of tangency
+
+    @note x is always the q_att as the point of tangency, hence 1-D
+    @note v is 2-D array of single vector
+
     """
+    if v.ndim == 2:
+        v = v[:, 0]
 
     v_norm = np.linalg.norm(v)
 

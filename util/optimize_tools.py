@@ -40,6 +40,14 @@ def optimize_single_system(q_train, w_train, q_att):
 
 
 def optimize_single_quat_system(q_train, w_train, q_att):
+    """
+    @algorithm:
+        1. Given the q_att as the point of tangency, project the current q_i onto the tangent space via Log map
+        2. Compute the predicted angular velocity in the tangent space
+        3. Project the trained angular velocity from quaternion to the tangent space via Log map
+        4. Compute the objective by measuring the Euclidean distance between w_pred and w_diff from training
+    
+    """
 
     q_att = canonical_quat(q_att.as_quat())
 
@@ -55,23 +63,18 @@ def optimize_single_quat_system(q_train, w_train, q_att):
 
     for i in range(N):
         
-        w_i = canonical_quat(R.from_rotvec(w_train[i]).as_quat()).reshape(-1, 1)
-
         q_i = canonical_quat(q_train[i].as_quat())
-
-
-        q_diff = riem_log(q_att, q_i).reshape(-1, 1)
-
+        q_diff = riem_log(q_att, q_i)[:, np.newaxis]
         w_pred = A @ q_diff
 
 
-        objective += cp.norm(w_pred - riem_log(q_att, w_i), 2)**2
+        w_i = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
+        w_diff = riem_log(q_att, w_i)[:, np.newaxis]
 
-        # q_diff = (q_train[i] * q_att.inv()).as_quat()
 
-        # w_pred = A @ canonical_quat(q_diff)[0:3]
+        objective += cp.norm(w_pred - w_diff, 2)**2
 
-        # objective +=cp.norm(w_pred- w_train[i], 2)**2
+  
 
     problem = cp.Problem(cp.Minimize(objective), constraints)
     problem.solve(solver=cp.MOSEK, verbose=True)

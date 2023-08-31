@@ -19,7 +19,7 @@ def canonical_quat(q):
 
 if __name__ == "__main__":
 
-    N = 60
+    N = 50
     dt = 0.1  # unit time
     ang_vel = np.pi/6
 
@@ -33,37 +33,32 @@ if __name__ == "__main__":
         w_train.append(w_axis * ang_vel * (N-i)/N)  #decaying velocity approaching zero near attractor
 
     q_att = q_train[-1]
-
-
+    
     A = optimize_tools.optimize_single_quat_system(q_train, w_train, q_att)
 
     print(A)
 
 
+    q_init = R.from_euler('xyz', [52, 50, 30], degrees=True)
+    
     q_test = [R.identity()]
     w_test = []
 
     q_att = canonical_quat(q_att.as_quat())
 
     for i in range(N):
-
         q_i =  canonical_quat(q_test[i].as_quat())
+        q_diff = riem_log(q_att, q_i)[:, np.newaxis]
+        w_pred = A @ q_diff  # in tangent space
 
-        q_diff = riem_log(q_att, q_i).reshape(-1, 1)
 
-        w_pred = A @ q_diff
+        w_test.append(riem_exp(q_att, w_pred)) # in quat space
 
-        w_test.append(w_pred)
+        d_q = R.from_quat(w_test[i]).as_rotvec()
 
-        
-        q_next =  R.from_rotvec(w_test[i] * dt) * q_test[i]
+        # d_q = R.from_quat(w_test[i]).as_rotvec() * dt
+        q_next = R.from_rotvec(d_q) * q_test[i]
 
-        # q_diff = (q_test[i] * q_att.inv()).as_quat()
-        
-        # w_pred = A @ canonical_quat(q_diff)[0:3]
-        # w_test.append(w_pred)
-
-        # q_next =  R.from_rotvec(w_test[i] * dt) * q_test[i]
         q_test.append(q_next)
 
     
@@ -76,8 +71,8 @@ if __name__ == "__main__":
     ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
     ax.set_aspect("equal", adjustable="box")
 
+    # plot_tools.animate_rotated_axes(ax, q_test)
     plot_tools.animate_rotated_axes(ax, q_train)
-
 
 
     plt.show()
