@@ -55,29 +55,30 @@ Verify if dq in tangent space is equivalent to dq in quaternion space
 """
 
 
-# A = -1 * np.eye(4)
-# dt = 0.5
+A = -1 * np.eye(4)
+dt = 0.5
 
 # q_curr_q = canonical_quat(R.identity().as_quat())
-# q_id_q = canonical_quat(R.identity().as_quat())
+q_id_q = canonical_quat(R.identity().as_quat())
 
-# q_curr_q = canonical_quat(R.from_euler('xyz', [0, 0,0], degrees=True).as_quat())
-
-# q_att_q = canonical_quat(R.from_euler('xyz', [30, 0, 0], degrees=True).as_quat())
-
+q_curr_q = canonical_quat(R.from_euler('xyz', [10, 10,0], degrees=True).as_quat())
+q_att_q = canonical_quat(R.from_euler('xyz', [50, 0, 20], degrees=True).as_quat())
 
 
-# q_curr_t = riem_log(q_att_q, q_curr_q)[:, np.newaxis]
-# w = A @ q_curr_t 
-# d_q_t = w * dt
-# q_next_t = q_curr_t + d_q_t
-# q_next_t = riem_exp(q_att_q, q_next_t)
-# q_next_1 = R.from_quat(q_next_t).as_euler('xyz', degrees=True)
+
+q_curr_t = riem_log(q_att_q, q_curr_q)[:, np.newaxis]
+d_q_t = A @ q_curr_t  * dt
+q_next_t = q_curr_t + d_q_t
+q_next_t = riem_exp(q_att_q, q_next_t)
+q_next_1 = R.from_quat(q_next_t).as_euler('xyz', degrees=True)
 
 
 
 
-# d_q_q = riem_exp(q_id_q, d_q_t)
+d_q_q = parallel_transport(q_att_q, q_curr_q, d_q_t)
+q_next_2 = riem_exp(q_curr_q, d_q_q)
+q_next_2 = R.from_quat(q_next_2).as_euler('xyz', degrees=True)
+
 # d_q_q = R.from_quat(d_q_q)
 
 # d_q_q = R.from_quat(q_att_q).inv() * R.from_quat(d_q_q)
@@ -87,59 +88,35 @@ Verify if dq in tangent space is equivalent to dq in quaternion space
 # q_next_q = d_q_q * R.from_quat(q_curr_q)
 # q_next_2 = q_next_q.as_euler('xyz', degrees=True)
 
-# c= 1
-
-
-
-
-"""
-Test parallel transport
-"""
-
-
-# d_q_q = parallel_transport(q_att_q, q_curr_q, w)
-# d_q_q = riem_exp(q_curr_q, d_q_q)
-# d_q_q = R.from_quat(d_q_q)
-
-
-# # d_q_q = riem_exp(q_att_q, d_q_t)
-# # d_q_q = R.from_quat(d_q_q)
-
-# print(d_q_q.as_euler('xyz', degrees=True))
-
-
-# c= 1
-
-
-"""
-2-D unit sphere
-"""
-
-a= -1
-dt = 0.5
-angle_att = np.pi/3
-angle =  np.pi/6
-
-q_att = np.array([np.cos(angle_att), np.sin(angle_att)])
-
-q_curr_q =  np.array([np.cos(angle), np.sin(angle)])
-q_curr_t = riem_log(q_att, q_curr_q)[:, np.newaxis]
-
-w =  a * q_curr_t 
-dq_t = w * dt
-
-q_next_t = q_curr_t + dq_t
-q_next_q = riem_exp(q_att, q_next_t)
-
-
-print(np.linalg.norm(q_next_q))
-
-
-dq_t_new = parallel_transport(q_att, q_curr_q, dq_t)
-q_next_q_new = riem_exp(q_curr_q, dq_t_new)
-
-print(np.linalg.norm(q_next_q_new))
-
-
-
 c= 1
+
+
+
+
+"""
+Verify parallel_transport in a 2-D unit sphere
+"""
+
+# a= -1
+# dt = 0.5
+# angle_att = np.pi/3
+# angle =  np.pi/6
+
+# q_att = np.array([np.cos(angle_att), np.sin(angle_att)])
+
+# q_curr_q =  np.array([np.cos(angle), np.sin(angle)])
+# q_curr_t = riem_log(q_att, q_curr_q)[:, np.newaxis]
+
+# w =  a * q_curr_t 
+# dq_t = w * dt
+
+# q_next_t = q_curr_t + dq_t
+# q_next_q = riem_exp(q_att, q_next_t)
+# print(np.linalg.norm(q_next_q))
+
+# dq_t_new = parallel_transport(q_att, q_curr_q, dq_t)
+# q_next_q_new = riem_exp(q_curr_q, dq_t_new)
+# print(np.linalg.norm(q_next_q_new))
+
+
+
