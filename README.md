@@ -8,7 +8,7 @@ Quaternion-DS
 
 ### Update
 9/1
-- propose a feasible dimension reduction to tackle singular covariance matrix resulting from unit vectors
+- ~~propose a feasible dimension reduction to tackle singular covariance matrix resulting from unit vectors~~
 - construct double DS learning
 - start on quaternion clustering
 

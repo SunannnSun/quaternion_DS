@@ -56,8 +56,13 @@ class gmm:
         
 
             Prior[k]       = len(q_k)/N
-            Mu[k, :]        = canonical_quat(q_k_mean.as_quat())
-            Sigma[k, :, :]  = riem_cov(q_k, q_k_mean)
+
+            # Mu[k, :]        = canonical_quat(q_k_mean.as_quat())
+            Mu[k, :]        = canonical_quat(R.identity().as_quat())
+
+            # Sigma[k, :, :]  = riem_cov(q_k, q_k_mean)
+            Sigma[k, :, :]  = riem_cov(q_k, R.from_quat(Mu[k, :]))
+
             q_normal_list.append(normal_class(Mu[k, :], Sigma[k, :, :], Prior[k]))
         
 

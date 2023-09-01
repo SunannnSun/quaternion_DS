@@ -2,7 +2,7 @@ import numpy as np
 from util.quat_tools import *
 from util.gmm import gmm as gmm_class
 from util.normal import normal as normal_class
-
+from scipy.stats import multivariate_normal
 
 # a = np.array([1, 0, 0])
 
@@ -124,11 +124,21 @@ The problem is:
     hyperplane, (e.g. 1-D line in S1, 2-D plane in S2), one dimension is redundant and results in linear dependency
 
 
-Possible solution:
-    PCA redution: we only require statistical model to provide an weighting function; hence wouldnt affect the learning
+PCA redution: 
+    we only require statistical model to provide an weighting function; hence wouldnt affect the learning
     of A matrix
-    Parallel transport to the identity where one dimension for every point is zero, and can be eliminated?
 
+Parallel transport:
+    to the identity where one dimension for every point is zero, and can be eliminated?
+    Define the identity 
+
+Degenerate case of Normal:
+    when cov is not full rank, allowing singularity 
+
+
+Quick way to work around: <- THIS WORKS
+    Define a scipy normal distribuion class of zero mean and the singular covariance
+    allowing singularity, and input the log(q)
 """
 
 
@@ -137,7 +147,6 @@ M = 2
 
 dq = np.pi/10
 angle =  0
-
 
 
 q_list = []
@@ -162,9 +171,19 @@ for i in range(N):
 
 cov = scatter/N
 
-print(np.linalg.eigvals(cov))
-print(np.linalg.det(cov))
+# print(np.linalg.eigvals(cov))
+# print(np.linalg.det(cov))
 
 c= 1
+
+rv = multivariate_normal(mean=np.zeros((M, )), cov=cov, allow_singular=True)
+
+
+log_q = [riem_log(q_mean, q) for q in q_list]
+
+print(rv.pdf(log_q))
+
+print(rv.pdf(q_list[5]))
+
 
 
