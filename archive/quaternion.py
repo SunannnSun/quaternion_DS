@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 
 from util import plot_tools, optimize_tools
-from util.q_gmm import q_gmm as q_gmm_class
+from util.gmm import q_gmm as q_gmm_class
 
 
 

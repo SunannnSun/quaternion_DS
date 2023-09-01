@@ -136,17 +136,25 @@ def riem_exp(x, v):
 
 
 def riem_cov(q_list, q_mean):
-    M = 4
 
+    q_arr = list_to_arr(q_list)
     q_mean = canonical_quat(q_mean.as_quat())
+
+    M = 4
+    
+
     scatter = np.zeros((M, M))
     N = len(q_list)
     for i in range(N):
-        q_i = canonical_quat(q_list[i].as_quat())
-        log_q = riem_log(q_mean, q_i).reshape(-1, 1)
-        scatter  += log_q @ log_q.T
-    
+        q_i = q_arr[i, :]
+        log_q = riem_log(q_mean, q_i)
+        scatter  += log_q[:, np.newaxis] @ log_q[np.newaxis, :]
+
+        # print(np.linalg.eigvals(scatter))
+
     cov = scatter/N
+
+    # print(np.linalg.eigvals(cov))
 
     return cov
 
@@ -164,7 +172,7 @@ def canonical_quat(q):
     
 
 
-def list_to_arr(self, q_list):
+def list_to_arr(q_list):
 
     N = len(q_list)
     M = 4

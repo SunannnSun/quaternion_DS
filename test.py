@@ -1,6 +1,7 @@
 import numpy as np
 from util.quat_tools import *
-
+from util.gmm import gmm as gmm_class
+from util.normal import normal as normal_class
 
 
 # a = np.array([1, 0, 0])
@@ -112,5 +113,58 @@ Verify parallel_transport in a 2-D unit sphere
 # q_next_q_new = riem_exp(q_curr_q, dq_t_new)
 # print(np.linalg.norm(q_next_q_new))
 
+
+
+
+"""
+Test the redundancy in unit sphere and collinearity in covariance matrix
+
+The problem is:
+    although points in the tangent space is embeded in the ambient space, because all points resides in the same 
+    hyperplane, (e.g. 1-D line in S1, 2-D plane in S2), one dimension is redundant and results in linear dependency
+
+
+Possible solution:
+    PCA redution: we only require statistical model to provide an weighting function; hence wouldnt affect the learning
+    of A matrix
+    Parallel transport to the identity where one dimension for every point is zero, and can be eliminated?
+
+"""
+
+
+N = 11
+M = 2
+
+dq = np.pi/10
+angle =  0
+
+
+
+q_list = []
+
+
+for i in range(N):
+    q_next =  np.array([np.cos(angle+dq*i), np.sin(angle+dq*i)])
+    q_list.append(q_next)
+
+
+q_mean = np.array([0, 1])
+
+
+scatter = np.zeros((M, M))
+
+for i in range(N):
+    q_i = q_list[i]
+    log_q = riem_log(q_mean, q_i)
+    scatter  += log_q[:, np.newaxis] @ log_q[np.newaxis, :]
+
+    # print(np.linalg.eigvals(scatter))
+
+cov = scatter/N
+
+print(np.linalg.eigvals(cov))
+print(np.linalg.det(cov))
+
+c= 1
 
 

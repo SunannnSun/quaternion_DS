@@ -87,6 +87,15 @@ def optimize_single_quat_system(q_train, w_train, q_att):
 
 
 
+def optimize_double_quat_system(q_train, w_train, q_att):
+    """
+    Require additional information on clustering result
+    """
+    
+    pass
+
+
+
 
 
 
