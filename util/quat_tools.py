@@ -1,15 +1,21 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
+"""
+@note all operations below, of which the return is a vector, return 1-D array, 
+      unless multiple inputs are given in vectorized operations
+"""
+
+
 def parallel_transport(x, y, v):
     """
+    parallel transport a vector u from space defined by x to a new space defined by y
+
     @param x quat representation
     @param y quat representation
+    @param v vector in tangent space (compatible with both 1-D and 2-D)
 
-    @param v vector in tangent space
-
-
-    parallel transport a vector u from space defined by x to a new space defined by y
+    @note the matrix operation A is defect... will fix it later
     """
 
     # M = v.shape[0]

@@ -3,17 +3,14 @@ import cvxpy as cp
 
 from util.quat_tools import *
 
-def canonical_quat(q):
-    """
-    Force all quaternions to have positive scalar part; necessary to ensure proper propagation in DS
-    """
-    if (q[-1] < 0):
-        return -q
-    else:
-        return q
 
 
-def optimize_single_system(q_train, w_train, q_att):
+
+def optimize_single_rotvec_system(q_train, w_train, q_att):
+    """
+    Perform optimization in rotation vector space (non-Euclidean, non unit-sphere)
+    """
+
     N = len(w_train)
     M = 3
 
@@ -41,59 +38,49 @@ def optimize_single_system(q_train, w_train, q_att):
 
 def optimize_single_quat_system(q_train, w_train, q_att):
     """
+
+    Perform optimization in the tangent space of the quaternion manifold
+
     @algorithm:
         1. Given the q_att as the point of tangency, project the current q_i onto the tangent space via Log map
         2. Compute the predicted angular velocity in the tangent space
-        3. Project the trained angular velocity from quaternion to the tangent space via Log map
+        3. Parallel transport the trained angular velocity from attractor to the current q
         4. Compute the objective by measuring the Euclidean distance between w_pred and w_diff from training
     
+        
+    @note: verify later if it makes difference between using the next point or the angular velocity
+    @note: attempt to vectorize the operation in the very late stage...
     """
 
-    q_att = canonical_quat(q_att.as_quat())
+
+    q_att_q = canonical_quat(q_att.as_quat())
 
     N = len(w_train)
     M = 4
 
     A = cp.Variable((M, M), symmetric=True)
 
-    constraints = []
-    constraints += [A << 0]
+    constraints = [A << 0]
 
     objective = 0
 
     for i in range(N-1):
         q_curr_q = canonical_quat(q_train[i].as_quat())
-
-        q_curr_t = riem_log(q_att, q_curr_q)[:, np.newaxis]
-
-        w_pred = A @ q_curr_t 
-
+        q_curr_t = riem_log(q_att_q, q_curr_q)
+        w_pred = A @ q_curr_t[:, np.newaxis]
 
         q_next_q = canonical_quat(q_train[i+1].as_quat())
         w_curr_t = riem_log(q_curr_q, q_next_q)
+        w_curr_t = parallel_transport(q_curr_q, q_att_q, w_curr_t)
 
-        w_curr_t = parallel_transport(q_curr_q, q_att, w_curr_t)[:, np.newaxis]
-
-
-
-
-        # w_curr_q = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
-
-        # w_curr_t = riem_log(q_curr_q, w_curr_q)[:, np.newaxis]
-
-        # w_curr_t = parallel_transport(q_curr_q, q_att, w_curr_t)[:, np.newaxis]
-
-
-
-
-
-
-        objective += cp.norm(w_pred - w_curr_t, 2)**2
+        objective += cp.norm(w_pred - w_curr_t[:, np.newaxis], 2)**2
 
   
 
     problem = cp.Problem(cp.Minimize(objective), constraints)
     problem.solve(solver=cp.MOSEK, verbose=True)
+
+    print(A.value)
 
     return A.value
 
