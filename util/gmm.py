@@ -109,17 +109,8 @@ class gmm:
             
             a = normal_k.logpdf(log_q_k)
             Mean = np.zeros((4, ))
-            # Cov = np.array([[ 0.0198658,  0.00406713, -0.00222208, -0.0050891 ],
-            # [ 0.00406713,  0.00641748, -0.00350619, -0.00115964],
-            # [-0.00222208, -0.00350619,  0.00191561,  0.00063357],
-            # [-0.0050891 , -0.00115964,  0.00063357,  0.00130618]])
-            # cov = 
-
             Cov = self.Sigma[k, :, :].astype(np.float16)
             aa = multivariate_normal.logpdf(log_q_k, mean=Mean, cov= Cov, allow_singular=True)
-
-            # a_a = Cov - normal_k.cov
-
             aaa= multivariate_normal.logpdf(log_q_k, mean=Mean, cov= normal_k.cov, allow_singular=True)
 
 
@@ -161,6 +152,85 @@ class gmm:
 
 
         return postProb
+
+
+
+
+
+
+
+    def logProb(self, q_list):
+        if isinstance(q_list, np.ndarray):
+            logProb = np.zeros((self.K, 1))
+
+        else:
+            logProb = np.zeros((self.K, self.N))
+
+        for k in range(self.K):
+            
+            _, mu_k, normal_k = tuple(self.q_normal_list[k].values())
+
+            if isinstance(q_list, np.ndarray):
+                log_q_k = riem_log(mu_k, q_list).astype(np.float16)
+
+                                   
+            else:
+                # log_q_k = riem_log(mu_k, list_to_arr(q_list))
+                log_q_k = [riem_log(mu_k, canonical_quat(q.as_quat())) for q in q_list]
+
+            logProb[k, :] = normal_k.logpdf(log_q_k)
+            
+            # a = normal_k.logpdf(log_q_k)
+            # Mean = np.zeros((4, ))
+            # Cov = self.Sigma[k, :, :].astype(np.float16)
+            # aa = multivariate_normal.logpdf(log_q_k, mean=Mean, cov= Cov, allow_singular=True)
+            # aaa= multivariate_normal.logpdf(log_q_k, mean=Mean, cov= normal_k.cov, allow_singular=True)
+
+
+        return logProb
+    
+
+    def postLogProb(self, q_list):
+        if isinstance(q_list, np.ndarray):
+            logPrior = np.log(self.Prior)
+            logProb  = self.logProb(q_list)
+
+            postLogProb     = logPrior[:, np.newaxis]  + logProb
+
+            maxPostLogProb = np.max(postLogProb)
+            expProb =  np.exp(postLogProb - maxPostLogProb)
+            
+            postProb = expProb / np.sum(expProb)
+
+
+
+        
+        else:
+            logPrior = np.log(self.Prior)
+            K = logPrior.shape[0]
+            logProb  = self.logProb(q_list)
+
+            postLogProb  = np.tile(logPrior[:, np.newaxis], (1, len(q_list))) + logProb
+
+            maxPostLogProb = np.max(postLogProb, axis=0, keepdims=True)
+
+            expProb = np.exp(postLogProb - np.tile(maxPostLogProb, (K, 1)))
+
+            postProb = expProb / np.sum(expProb, axis = 0, keepdims=True)
+
+            
+            # prob  = self.prob(q_list)
+            # postProb     = np.tile(Prior[:, np.newaxis], (1, self.N)) * prob
+
+            # postProb_sum = np.sum(postProb, axis=0, keepdims=True)
+
+            # postProb     = np.divide(postProb, np.tile(postProb_sum, (self.K, 1)))
+
+
+        return postProb
+
+
+
 
 
         

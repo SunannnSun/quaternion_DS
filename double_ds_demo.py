@@ -65,20 +65,29 @@ if __name__ == "__main__":
 
     #### Reproduce the demonstration ####
     # q_init = R.random()
-    dt = 0.001
+    dt = 0.01
     q_init = R.identity()
     q_test = [q_init]
 
     q_att_q = canonical_quat(q_train[-1].as_quat())
 
-    for i in range(N):
+    for i in range(N+100):
         q_curr_q = canonical_quat(q_test[i].as_quat())
         q_curr_t = riem_log(q_att_q, q_curr_q)
 
         # prob =gmm.prob(q_curr_q)
-        h_k_i =  gmm.postProb(q_curr_q)
+        # h_k_i =  gmm.postProb(q_curr_q)
 
-        w_pred_att  = A[1] @ q_curr_t[:, np.newaxis]
+        # prob    = gmm.prob(q_curr_q)
+        # logProb = gmm.logProb(q_curr_q)
+        h_k_i = gmm.postLogProb(q_curr_q)
+
+        aa = gmm.postLogProb(q_train)
+
+        
+        w_pred_att  = h_k_i[0, 0] * A[1] @ q_curr_t[:, np.newaxis] +  h_k_i[1, 0] * A[0] @ q_curr_t[:, np.newaxis]
+
+
         w_pred_curr = parallel_transport(q_att_q, q_curr_q, w_pred_att * dt)
 
         # w_pred_att = np.zeros((4, 1))
