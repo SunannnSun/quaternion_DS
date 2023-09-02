@@ -7,9 +7,12 @@ Quaternion-DS
 ---
 
 ### Update
+9/2
+- extend to multiple DS learning
+
 9/1
 - ~~propose a feasible dimension reduction to tackle singular covariance matrix resulting from unit vectors~~
-- construct double DS learning
+- ~~construct double DS learning~~
 - start on quaternion clustering
 
 
@@ -26,5 +29,6 @@ Quaternion-DS
 - plot sequence of rotation and show clusters in time series
 
 ---
-note
+thoughts
 - angular velocity directly acted on current orientation(world frame vs. local frame)
+- is cannocal quaternion always the right option? maybe should choose the one closest to the att out of two

@@ -21,7 +21,8 @@ if __name__ == "__main__":
     N1 = int(2/10 * N)
     dt = 0.05
     q_init = R.identity()
-    w_init = np.pi/3 * np.array([1, 0, 0]) 
+    # w_init = np.pi/3 * np.array([1, 0, 0]) 
+    w_init = np.pi/6 * np.array([1, 1, 0]) 
 
     q_train = [q_init]
     w_train = [w_init]
@@ -34,7 +35,8 @@ if __name__ == "__main__":
         q_train.append(q_next)
         w_train.append(w_init )  
 
-    w_new = np.pi/6 * np.array([0, 1, 0]) 
+    # w_new = np.pi/6 * np.array([0, 1, 0]) 
+    w_new = np.pi/3 * np.array([1, 0, 1]) 
     for i in np.arange(N1, N):
         assignment_arr[i] = 1
         q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
@@ -42,12 +44,12 @@ if __name__ == "__main__":
         w_train.append(w_new * (N-i)/N) 
 
 
-    # fig = plt.figure()
-    # ax = fig.add_subplot(projection="3d", proj_type="ortho")
-    # ax.figure.set_size_inches(10, 8)
-    # ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
-    # ax.set_aspect("equal", adjustable="box")
-    # plot_tools.animate_rotated_axes(ax, q_train)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d", proj_type="ortho")
+    ax.figure.set_size_inches(10, 8)
+    ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
+    ax.set_aspect("equal", adjustable="box")
+    plot_tools.animate_rotated_axes(ax, q_train)
 
 
 
@@ -55,8 +57,8 @@ if __name__ == "__main__":
     gmm = gmm_class(q_train)
     gmm.cluster(assignment_arr)
     gmm.return_norma_class(q_train, assignment_arr)
-    prob     = gmm.prob(q_train)
-    postProb = gmm.postProb(q_train)
+    postProb = gmm.postLogProb(q_train)
+
 
 
 
@@ -65,7 +67,7 @@ if __name__ == "__main__":
 
     #### Reproduce the demonstration ####
     # q_init = R.random()
-    dt = 0.01
+    dt = 0.05
     q_init = R.identity()
     q_test = [q_init]
 
@@ -74,28 +76,19 @@ if __name__ == "__main__":
     for i in range(N+100):
         q_curr_q = canonical_quat(q_test[i].as_quat())
         q_curr_t = riem_log(q_att_q, q_curr_q)
-
-        # prob =gmm.prob(q_curr_q)
-        # h_k_i =  gmm.postProb(q_curr_q)
-
-        # prob    = gmm.prob(q_curr_q)
-        # logProb = gmm.logProb(q_curr_q)
-        h_k_i = gmm.postLogProb(q_curr_q)
-
-        aa = gmm.postLogProb(q_train)
-
+        h_k = gmm.postLogProb(q_curr_q)
         
-        w_pred_att  = h_k_i[0, 0] * A[1] @ q_curr_t[:, np.newaxis] +  h_k_i[1, 0] * A[0] @ q_curr_t[:, np.newaxis]
+        # w_pred_att  = h_k[0, 0] * A[1] @ q_curr_t[:, np.newaxis] * dt + h_k[1, 0] * A[0] @ q_curr_t[:, np.newaxis] * dt
 
+        w_pred_att = np.zeros((4, 1))
+        for k in range(2):
+            h_k_i =  h_k[k, 0]
+            w_k_i =  A[k] @ q_curr_t[:, np.newaxis]
+            w_pred_att += h_k_i * w_k_i * dt
 
-        w_pred_curr = parallel_transport(q_att_q, q_curr_q, w_pred_att * dt)
+        # w_pred_att = A[0] @ q_curr_t[:, np.newaxis] * dt
 
-        # w_pred_att = np.zeros((4, 1))
-        # for k in range(2):
-        #     h_k_i =  gmm.postProb(q_curr_q)[k, 0]
-        #     w_k_i =  A[k] @ q_curr_t[:, np.newaxis]
-        #     w_pred_att += h_k_i * w_k_i * dt
-        # w_pred_curr = parallel_transport(q_att_q, q_curr_q, w_pred_att)
+        w_pred_curr = parallel_transport(q_att_q, q_curr_q, w_pred_att)
 
         q_next = riem_exp(q_curr_q, w_pred_curr)
         q_test.append(R.from_quat(q_next))

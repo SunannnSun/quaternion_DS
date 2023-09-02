@@ -75,7 +75,6 @@ def optimize_single_quat_system(q_train, w_train, q_att):
 
         objective += cp.norm(w_pred - w_curr_t[:, np.newaxis], 2)**2
 
-  
 
     problem = cp.Problem(cp.Minimize(objective), constraints)
     problem.solve(solver=cp.MOSEK, verbose=True)
