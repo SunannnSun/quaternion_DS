@@ -87,12 +87,68 @@ def optimize_single_quat_system(q_train, w_train, q_att):
 
 
 
-def optimize_double_quat_system(q_train, w_train, q_att):
+def optimize_double_quat_system(q_train, w_train, q_att, postProb):
     """
+    need to vectorize later
+
+    later change from q_next to the actual w angular velocity
+
     Require additional information on clustering result
     """
+
+    q_att_q = canonical_quat(q_att.as_quat())
+    q_train_q = list_to_arr(q_train)
+
+
+    K = postProb.shape[0]
+    N = len(w_train)
+    M = 4
+
+    A0 = cp.Variable((M, M), symmetric=True)
+    A1 = cp.Variable((M, M), symmetric=True)
+
+    A_vars = [A0, A1]
+    constraints = [A0 << 0, A1 << 0]
+
+
+    fK = []
+    for k in np.arange(K):
+        fk = A_vars[k] @ q_train_q.T
+        hk = np.tile(postProb[k, :].T, (M, 1))
+        fK.append(cp.multiply(hk ,fk))
     
-    pass
+    a = fK[0] + fK[1]
+
+
+    b = np.zeros((M, N))
+
+    for i in range(N):
+        q_curr   = q_train[i]
+        q_curr_q = q_train_q[i]
+
+        w_curr = R.from_rotvec(w_train[i])
+        q_next = w_curr * q_curr
+        q_next_q = canonical_quat(q_next.as_quat())
+
+
+        q_next_t = riem_log(q_curr_q, q_next_q)
+        b[:, i] = parallel_transport(q_curr_q, q_att_q, q_next_t)
+    
+        
+
+    objective = cp.sum(cp.norm2(a - b, axis=0))
+
+
+    problem = cp.Problem(cp.Minimize(objective), constraints)
+    problem.solve(solver=cp.MOSEK, verbose=True)
+
+
+    A_res = np.zeros((K, M, M))
+    for k in range(K):
+        A_res[k, :, :] = A_vars[k].value
+        print(A_vars[k].value)
+
+    return A_res
 
 
 
@@ -126,7 +182,7 @@ def optimize_lpv_ds_from_data(Data, attractor, ctr_type, gmm, *args):
 
 
     # Define Constraints and Assign Initial Values
-    # 创建一个object 叫decision variable，which makes it
+    # 创建一个object 叫decision variable, which makes it
     A_vars = []
     b_vars = []
     Q_vars = []

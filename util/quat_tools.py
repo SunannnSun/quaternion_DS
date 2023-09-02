@@ -32,12 +32,18 @@ def parallel_transport(x, y, v):
     log_yx = riem_log(y, x)
     d_xy = unsigned_angle(x, y)
 
+    if d_xy == 0:
+        return v
+
     if v.ndim == 2:
         u = v[:, 0] - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
 
     elif v.ndim == 1:
         u = v - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
 
+    # if any(np.isnan(u)):
+    #     c= 1
+    #     pass
 
     return u
 
@@ -148,7 +154,8 @@ def riem_cov(q_list, q_mean):
     for i in range(N):
         q_i = q_arr[i, :]
         log_q = riem_log(q_mean, q_i)
-        scatter  += log_q[:, np.newaxis] @ log_q[np.newaxis, :]
+        # scatter  += log_q[:, np.newaxis] @ log_q[np.newaxis, :]
+        scatter += np.outer(log_q, log_q)
 
         # print(np.linalg.eigvals(scatter))
 

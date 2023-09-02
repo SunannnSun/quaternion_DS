@@ -22,5 +22,9 @@ Quaternion-DS
 - ~~finshi plot_tools.py~~
 - ~~optimize_single_system~~
 - ~~retrieve mean and covariance~~
-- construct quat normal dist
+- ~~construct quat normal dist~~
 - plot sequence of rotation and show clusters in time series
+
+---
+note
+- angular velocity directly acted on current orientation(world frame vs. local frame)
