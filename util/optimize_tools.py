@@ -56,6 +56,7 @@ def optimize_single_quat_system(q_train, w_train, q_att):
 
     q_att_q = canonical_quat(q_att.as_quat())
     q_id_q = canonical_quat(R.identity().as_quat())
+    q_train_att = riem_log(q_att_q, q_train_q)
 
     N = len(w_train)
     M = 4
@@ -77,14 +78,14 @@ def optimize_single_quat_system(q_train, w_train, q_att):
         objective += cp.norm(w_pred_att - w_curr_att[:, np.newaxis], 2)**2
     """
 
-    w_pred_att =  A @ q_train_q.T
+    w_pred_att =  A @ q_train_att.T
     w_curr_att = np.zeros((M, N))
     for i in range(N):
         w_curr_q = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
         w_curr_t = riem_log(q_id_q, w_curr_q)
         w_curr_att[:, i] = parallel_transport(q_id_q, q_att_q, w_curr_t)        
-    # objective = cp.norm(w_pred_att-w_curr_att, 'fro')
-    objective = cp.sum(cp.norm2(w_pred_att - w_curr_att, axis=0))
+    objective = cp.norm(w_pred_att-w_curr_att, 'fro')
+    # objective = cp.sum(cp.norm2(w_pred_att - w_curr_att, axis=0))
 
     problem = cp.Problem(cp.Minimize(objective), constraints)
     problem.solve(solver=cp.MOSEK, verbose=False)
@@ -108,6 +109,8 @@ def optimize_double_quat_system(q_train, w_train, q_att, postProb):
     q_att_q = canonical_quat(q_att.as_quat())
     q_id_q = canonical_quat(R.identity().as_quat())
     q_train_q = list_to_arr(q_train)
+    q_train_att = riem_log(q_att_q, q_train_q)
+
 
     K = postProb.shape[0]
     N = len(w_train)
@@ -119,23 +122,22 @@ def optimize_double_quat_system(q_train, w_train, q_att, postProb):
     A1 = cp.Variable((M, M), symmetric=True)
     A_vars = [A0, A1]
     
-    N1 = 28
     # objective = 0
     constraints = [A0 << 0, A1<<0]
  
-    # fK = []
-    # for k in np.arange(K):
-    #     fk = A_vars[k] @ q_train_q.T
-    #     hk = np.tile(postProb[k, :].T, (M, 1))
-    #     fK.append(cp.multiply(hk ,fk))
-    # w_pred_att = fK[0] + fK[1]
+    fK = []
+    for k in np.arange(K):
+        fk = A_vars[k] @ q_train_att.T
+        hk = np.tile(postProb[k, :].T, (M, 1))
+        fK.append(cp.multiply(hk ,fk))
+    w_pred_att = fK[0] + fK[1]
 
-    hk0 = np.tile(postProb[0, :].T, (M, 1))
-    hk1 = np.tile(postProb[1, :].T, (M, 1))
+    # hk0 = np.tile(postProb[0, :].T, (M, 1))
+    # hk1 = np.tile(postProb[1, :].T, (M, 1))
 
-    w_pred_att = cp.multiply(hk0, A_vars[0] @ q_train_q.T) + cp.multiply(hk1,  A_vars[1] @ q_train_q.T)
+    # w_pred_att = cp.multiply(hk0, A_vars[0] @ q_train_q.T) + cp.multiply(hk1,  A_vars[1] @ q_train_q.T)
 
-    # w_pred_att = cp.multiply(hk ,fk)
+    w_pred_att = cp.multiply(hk ,fk)
 
 
     w_curr_att = np.zeros((M, N))
@@ -145,8 +147,8 @@ def optimize_double_quat_system(q_train, w_train, q_att, postProb):
         w_curr_att[:, i] = parallel_transport(q_id_q, q_att_q, w_curr_t)
     
 
-    # objective = cp.sum(cp.norm2(w_pred_att - w_curr_att, axis=0))
-    objective = cp.norm(w_pred_att-w_curr_att, 'fro')
+    objective = cp.sum(cp.norm2(w_pred_att - w_curr_att, axis=0))
+    # objective = cp.norm(w_pred_att-w_curr_att, 'fro')
 
 
     problem = cp.Problem(cp.Minimize(objective), constraints)
