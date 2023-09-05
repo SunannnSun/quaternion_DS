@@ -22,30 +22,33 @@ if __name__ == "__main__":
 
     K = 2
     N = 50
-    dt = 0.01
+    dt = 0.1
     q_init = R.identity()
     q_train = [q_init]
-    w_train = []
+
+    w_init = np.pi/6 * np.array([1, 0, 0]) 
+    w_train = [w_init]
+
+
+    q_id_q = canonical_quat(R.identity().as_quat())
+
+
 
     assignment_arr = np.zeros((K*N+1, ), dtype=int)
 
     for k in range(K):
         if len(w_train) != 0:
             w_train.pop()
-        # rot_vec = R.random(random_state=rand_seed).as_rotvec()
-        # w_new = np.pi/6 * rot_vec/np.linalg.norm(rot_vec)
-
-        w_new = np.pi/3 * np.array([1, 0, 0]) 
-
-        w_train.append(w_new)
+            w_new = np.pi/6 * np.array([1, 0, 1]) 
+            w_train.append(w_new)
 
         for i in np.arange(N*k, N*(k+1)):
             q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
             q_train.append(q_next)
             if k == K-1:
-                w_train.append(w_new )
+                w_train.append(w_new * (N*K-i)/(N*K))
             else:
-                w_train.append(w_new)
+                w_train.append(w_init)
             assignment_arr[i+1] = k
 
 
@@ -83,21 +86,21 @@ if __name__ == "__main__":
         q_curr_t = riem_log(q_att_q, q_curr_q)
         h_k = gmm.postLogProb(q_curr_q)
         
-        w_pred_att  = h_k[0, 0] * A[1] @ q_curr_t[:, np.newaxis] * dt + h_k[1, 0] * A[0] @ q_curr_t[:, np.newaxis] * dt
-        # w_pred_att  = h_k[0, 0] * A[0] @ q_curr_t[:, np.newaxis] * dt + h_k[1, 0] * A[1] @ q_curr_t[:, np.newaxis] * dt
+        w_pred_att  = h_k[0, 0] * A[0] @ q_curr_t[:, np.newaxis] * dt + h_k[1, 0] * A[1] @ q_curr_t[:, np.newaxis] * dt
 
         # w_pred_att = np.zeros((4, 1))
         # for k in range(2):
         #     h_k_i =  h_k[k, 0]
         #     w_k_i =  A[k] @ q_curr_t[:, np.newaxis]
         #     w_pred_att += h_k_i * w_k_i * dt
-
+        
         # w_pred_att = A[0] @ q_curr_t[:, np.newaxis] * dt
 
-        w_pred_curr = parallel_transport(q_att_q, q_curr_q, w_pred_att)
+        w_pred_id = parallel_transport(q_att_q, q_id_q, w_pred_att)
 
-        q_next = riem_exp(q_curr_q, w_pred_curr)
-        q_test.append(R.from_quat(q_next))
+        q_next = R.from_quat(riem_exp(q_id_q, w_pred_id * dt)) * R.from_quat(q_curr_q)
+
+        q_test.append(q_next)
 
 
 

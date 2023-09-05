@@ -301,3 +301,63 @@ print(R.from_quat(riem_exp(q_id_q, parallel_transport(q_att_q, q_id_q, q_diff_t)
 we have two options, if angular velocity expressed in world, parallel transport to q_id; or if expressed in local frame, parallel transport to q_curr
 '''
 
+
+def optimize_quat_system(q_train, w_train, q_att, postProb):
+    """
+    """
+
+    q_att_q = canonical_quat(q_att.as_quat())
+    q_train_q = list_to_arr(q_train)
+
+
+    K = postProb.shape[0]
+    N = len(w_train)
+    M = 4
+
+
+    A_vars = []
+    constraints = []
+    for k in range(K):
+        A_vars.append(cp.Variable((M, M), symmetric=True))
+        constraints += [A_vars[k] << 0]
+
+
+    FK = []
+    for k in np.arange(K):
+        fk = A_vars[k] @ q_train_q.T
+        hk = np.tile(postProb[k, :].T, (M, 1))
+        FK.append(cp.multiply(hk ,fk))
+    
+    w_pred = 0
+    for k in np.arange(K):
+        w_pred += FK[k]
+
+
+
+
+    w_act = np.zeros((M, N))
+    for i in range(N):
+        q_curr   = q_train[i]
+        q_curr_q = q_train_q[i]
+
+        w_curr = R.from_rotvec(w_train[i])
+        q_next = w_curr * q_curr
+        q_next_q = canonical_quat(q_next.as_quat())
+
+        q_next_t = riem_log(q_curr_q, q_next_q)
+        w_act[:, i] = parallel_transport(q_curr_q, q_att_q, q_next_t)
+    
+        
+
+    objective = cp.sum(cp.norm2(w_pred - w_act, axis=0))
+
+    problem = cp.Problem(cp.Minimize(objective), constraints)
+    problem.solve(solver=cp.MOSEK, verbose=True)
+
+
+    A_res = np.zeros((K, M, M))
+    for k in range(K):
+        A_res[k, :, :] = A_vars[k].value
+        print(A_vars[k].value)
+
+    return A_res

@@ -13,12 +13,11 @@ if __name__ == "__main__":
     Demonstrate learning a single linear dynamical system in quaternion space
     """
 
-
     ##### Create and plot the synthetic demonstration data ####
-    N = 60
+    N = 40
     dt = 0.1
     q_init = R.identity()
-    w_init = np.pi/3 * np.array([1, 0, 0]) 
+    w_init = np.pi/6 * np.array([1, 0, 1]) 
 
     q_train = [q_init]
     w_train = [w_init]
@@ -30,9 +29,8 @@ if __name__ == "__main__":
     for i in range(N):
         q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
         q_train.append(q_next)
-        w_train.append(w_init * (N-i)/N)
-
-        
+        w_train.append(w_init*(N-i)/N)
+        # w_train.append(w_init)
 
 
     fig = plt.figure()
@@ -43,11 +41,13 @@ if __name__ == "__main__":
     plot_tools.animate_rotated_axes(ax, q_train)
 
 
+    # q_att = R.from_euler('xyz', np.pi/2 * np.array([0, 1, 0]) )
 
 
     #### Learn the matrix A of single linear DS ####
     A = optimize_tools.optimize_single_quat_system(q_train, w_train,  q_train[-1])
 
+    # A = optimize_tools.optimize_single_quat_system(q_train, w_train,  q_att)
 
 
     #### Reproduce the demonstration ####
@@ -58,16 +58,16 @@ if __name__ == "__main__":
 
     q_att_q = canonical_quat(q_train[-1].as_quat())
 
+    # q_att_q = canonical_quat(q_att.as_quat())
+
     for i in range(N+200):
         q_curr_q = canonical_quat(q_test[i].as_quat())
         q_curr_t = riem_log(q_att_q, q_curr_q)
         w_pred_att = A @ q_curr_t[:, np.newaxis]
 
-
         w_pred_id = parallel_transport(q_att_q, q_id_q, w_pred_att)
 
         q_next = R.from_quat(riem_exp(q_id_q, w_pred_id * dt)) * R.from_quat(q_curr_q)
-
 
         q_test.append(q_next)
 
