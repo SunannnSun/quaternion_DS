@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
 
     K = 2
-    N = 50
+    N = 30
     dt = 0.1
     q_init = R.identity()
     q_train = [q_init]
@@ -32,14 +32,12 @@ if __name__ == "__main__":
 
     q_id_q = canonical_quat(R.identity().as_quat())
 
-
-
     assignment_arr = np.zeros((K*N+1, ), dtype=int)
 
     for k in range(K):
         if len(w_train) != 0:
             w_train.pop()
-            w_new = np.pi/6 * np.array([1, 0, 1]) 
+            w_new = np.pi/3 * np.array([1, 1, 1]) 
             w_train.append(w_new)
 
         for i in np.arange(N*k, N*(k+1)):
@@ -68,38 +66,39 @@ if __name__ == "__main__":
     postProb = gmm.postLogProb(q_train)
 
 
+    # A = optimize_tools.optimize_double_quat_system(q_train, w_train, q_train[-1], postProb)
+    A = optimize_tools.optimize_quat_system(q_train, w_train, q_train[-1], postProb)
 
-
-    A = optimize_tools.optimize_double_quat_system(q_train, w_train, q_train[-1], postProb)
-# """
 
     #### Reproduce the demonstration ####
     # q_init = R.random()
-    dt = 0.001
+    dt = 0.1
     q_init = R.identity()
-    q_test = [q_init]
 
+    q_test = [q_init]
     q_att_q = canonical_quat(q_train[-1].as_quat())
 
-    for i in range(N+500):
-        q_curr_q = canonical_quat(q_test[i].as_quat())
-        q_curr_t = riem_log(q_att_q, q_curr_q)
+    for i in range(N+100):
+        q_curr   = q_test[i]
+        q_curr_q = canonical_quat(q_curr.as_quat())
+        q_curr_att = riem_log(q_att_q, q_curr_q)
+
         h_k = gmm.postLogProb(q_curr_q)
         
-        w_pred_att  = h_k[0, 0] * A[0] @ q_curr_t[:, np.newaxis] * dt + h_k[1, 0] * A[1] @ q_curr_t[:, np.newaxis] * dt
+        # w_pred_att  = h_k[0, 0] * A[0] @ q_curr_att[:, np.newaxis] + h_k[1, 0] * A[1] @ q_curr_att[:, np.newaxis]
 
-        # w_pred_att = np.zeros((4, 1))
-        # for k in range(2):
-        #     h_k_i =  h_k[k, 0]
-        #     w_k_i =  A[k] @ q_curr_t[:, np.newaxis]
-        #     w_pred_att += h_k_i * w_k_i * dt
-        
-        # w_pred_att = A[0] @ q_curr_t[:, np.newaxis] * dt
+        w_pred_att = np.zeros((4, 1))
+        for k in range(K):
+            h_k_i =  h_k[k, 0]
+            w_k_i =  A[k] @ q_curr_att[:, np.newaxis]
+            w_pred_att += h_k_i * w_k_i
+
 
         w_pred_id = parallel_transport(q_att_q, q_id_q, w_pred_att)
+        w_pred_q  = riem_exp(q_id_q, w_pred_id * dt) # multiplied by dt before projecting back to the quaternion space
+        w_pred    = R.from_quat(w_pred_q)
 
-        q_next = R.from_quat(riem_exp(q_id_q, w_pred_id * dt)) * R.from_quat(q_curr_q)
-
+        q_next = w_pred * q_curr
         q_test.append(q_next)
 
 
@@ -112,4 +111,3 @@ if __name__ == "__main__":
     ax.set_aspect("equal", adjustable="box")
 
     plot_tools.animate_rotated_axes(ax, q_test)
-# """
