@@ -194,48 +194,110 @@ test if rv outputs zero postProb for quaternions
 #         [ 0.00051415, -0.00345307,  0.00188659,  0.00098334]]])
 
 
-cov = np.array([[ 0.0198658 ,  0.00406713, -0.00222208, -0.0050891 ],
-       [ 0.00406713,  0.00641748, -0.00350619, -0.00115964],
-       [-0.00222208, -0.00350619,  0.00191561,  0.00063357],
-       [-0.0050891 , -0.00115964,  0.00063357,  0.00130618]])
+# cov = np.array([[ 0.0198658 ,  0.00406713, -0.00222208, -0.0050891 ],
+#        [ 0.00406713,  0.00641748, -0.00350619, -0.00115964],
+#        [-0.00222208, -0.00350619,  0.00191561,  0.00063357],
+#        [-0.0050891 , -0.00115964,  0.00063357,  0.00130618]])
 
-pca = PCA(n_components=3)
-
-
-reduced_cov = pca.fit_transform(cov)
+# pca = PCA(n_components=3)
 
 
-
-mean = np.zeros((4, 1))
-
-normal_k = multivariate_normal(mean=np.zeros((4, )), cov=cov, allow_singular=True)
-
-
-# q_mean =np.array([[ 0.24419147,  0.01574261, -0.00860098,  0.9695611 ],
-#        [ 0.46123752,  0.2381517 , -0.13011426,  0.84475677]])
-
-q_mean = np.array([ 0.24419147,  0.01574261, -0.00860098,  0.9695611 ])
-
-q_1 = R.identity() 
-
-q_1_log = riem_log(q_mean, canonical_quat(q_1.as_quat()))
-
-q_2_q = np.array([ 9.06048037e-03,  9.19569112e-04, -8.17894335e-04,  9.99958196e-01])
-q_2_log = riem_log(q_mean, q_mean)
-
-
-prob = normal_k.pdf(q_1_log)
-
-
-print(normal_k.pdf(q_2_log))
-
-print(normal_k.pdf(np.array([0, 0, 0, 0.0001])))
-
-
-q3 = np.array([-0.23040712, -0.01451531,  0.00761195,  0.05833303])
-a = normal_k.logpdf(q3)
-aa = multivariate_normal.logpdf(q3, mean=np.zeros((4, )), cov= normal_k.cov)
+# reduced_cov = pca.fit_transform(cov)
 
 
 
-cc= 1
+# mean = np.zeros((4, 1))
+
+# normal_k = multivariate_normal(mean=np.zeros((4, )), cov=cov, allow_singular=True)
+
+
+# # q_mean =np.array([[ 0.24419147,  0.01574261, -0.00860098,  0.9695611 ],
+# #        [ 0.46123752,  0.2381517 , -0.13011426,  0.84475677]])
+
+# q_mean = np.array([ 0.24419147,  0.01574261, -0.00860098,  0.9695611 ])
+
+# q_1 = R.identity() 
+
+# q_1_log = riem_log(q_mean, canonical_quat(q_1.as_quat()))
+
+# q_2_q = np.array([ 9.06048037e-03,  9.19569112e-04, -8.17894335e-04,  9.99958196e-01])
+# q_2_log = riem_log(q_mean, q_mean)
+
+
+# prob = normal_k.pdf(q_1_log)
+
+
+# print(normal_k.pdf(q_2_log))
+
+# print(normal_k.pdf(np.array([0, 0, 0, 0.0001])))
+
+
+# q3 = np.array([-0.23040712, -0.01451531,  0.00761195,  0.05833303])
+# a = normal_k.logpdf(q3)
+# aa = multivariate_normal.logpdf(q3, mean=np.zeros((4, )), cov= normal_k.cov)
+
+
+
+# cc= 1
+
+
+"""
+Figure out the q difference and expressed in different body frame and world frame
+"""
+
+##### Create and plot the synthetic demonstration data ####
+N = 60
+dt = 0.1
+q_init = R.identity()
+w_init = np.pi/3 * np.array([1, 0, 0]) 
+
+q_train = [q_init]
+w_train = [w_init]
+
+# print(R.from_rotvec(w_init).as_euler('xyz', degrees=True))
+
+q_id_q = canonical_quat(R.identity().as_quat())
+print(q_id_q)
+
+for i in range(N):
+    q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
+    q_train.append(q_next)
+    # w_train.append(w_init * (N-i)/N)
+    w_train.append(w_init)
+
+
+q_att_q = canonical_quat((q_train[-1].as_quat()))
+
+
+
+q_curr_q = canonical_quat(q_train[0].as_quat())
+q_next_q = canonical_quat(q_train[1].as_quat())
+
+q_curr_t = riem_log(q_id_q, q_curr_q)
+q_next_t = riem_log(q_id_q, q_next_q)
+
+q_diff_t = q_next_t - q_curr_t
+
+print(R.from_quat(riem_exp(q_id_q, q_diff_t)).as_euler('xyz', degrees=True))
+
+# q_diff = q_next_q - q_curr_q
+
+# print(np.linalg.norm(riem_log(q_att_q, q_curr_q)))
+
+# print(np.linalg.norm(riem_log(q_att_q, q_next_q)))
+
+q_curr_t = riem_log(q_att_q, q_curr_q)
+q_next_t = riem_log(q_att_q, q_next_q)
+q_diff_t =   q_next_t - q_curr_t 
+
+print(q_diff_t)
+
+# print(R.from_quat(riem_exp(q_id_q, parallel_transport(q_att_q, q_id_q, q_diff_t))).as_euler('xyz', degrees=True))
+
+print(R.from_quat(riem_exp(q_id_q, parallel_transport(q_att_q, q_id_q, q_diff_t))).as_euler('xyz', degrees=True))
+
+
+'''
+we have two options, if angular velocity expressed in world, parallel transport to q_id; or if expressed in local frame, parallel transport to q_curr
+'''
+

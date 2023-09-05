@@ -16,37 +16,30 @@ if __name__ == "__main__":
 
 
     ##### Create and plot the synthetic demonstration data ####
-    rand_seed =  np.random.RandomState(seed=1)
-    # rand_seed =  np.random.RandomState()
-
-
-    K = 2
-    N = 50
-    dt = 0.01
+    N = 100
+    N1 = int(2/10 * N)
+    dt = 0.05
     q_init = R.identity()
+    # w_init = np.pi/3 * np.array([1, 0, 0]) 
+    w_init = np.pi/6 * np.array([1, 1, 0]) 
+
     q_train = [q_init]
-    w_train = []
+    w_train = [w_init]
 
-    assignment_arr = np.zeros((K*N+1, ), dtype=int)
 
-    for k in range(K):
-        if len(w_train) != 0:
-            w_train.pop()
-        # rot_vec = R.random(random_state=rand_seed).as_rotvec()
-        # w_new = np.pi/6 * rot_vec/np.linalg.norm(rot_vec)
+    assignment_arr = np.zeros((N+1, ), dtype=int)
 
-        w_new = np.pi/3 * np.array([1, 0, 0]) 
+    for i in range(N1):
+        q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
+        q_train.append(q_next)
+        w_train.append(w_init )  
 
-        w_train.append(w_new)
-
-        for i in np.arange(N*k, N*(k+1)):
-            q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
-            q_train.append(q_next)
-            if k == K-1:
-                w_train.append(w_new )
-            else:
-                w_train.append(w_new)
-            assignment_arr[i+1] = k
+    w_new = np.pi/3 * np.array([1, 0, 1]) 
+    for i in np.arange(N1, N):
+        assignment_arr[i+1] = 1
+        q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
+        q_train.append(q_next)
+        w_train.append(w_new * (N-i)/N) 
 
 
     fig = plt.figure()
@@ -55,6 +48,7 @@ if __name__ == "__main__":
     ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
     ax.set_aspect("equal", adjustable="box")
     plot_tools.animate_rotated_axes(ax, q_train)
+
 
 
 
@@ -67,31 +61,32 @@ if __name__ == "__main__":
 
 
 
+
+
     A = optimize_tools.optimize_double_quat_system(q_train, w_train, q_train[-1], postProb)
 # """
 
     #### Reproduce the demonstration ####
     # q_init = R.random()
-    dt = 0.001
+    dt = 0.0005
     q_init = R.identity()
     q_test = [q_init]
 
     q_att_q = canonical_quat(q_train[-1].as_quat())
 
-    for i in range(N+500):
+    for i in range(N+100):
         q_curr_q = canonical_quat(q_test[i].as_quat())
         q_curr_t = riem_log(q_att_q, q_curr_q)
         h_k = gmm.postLogProb(q_curr_q)
         
         w_pred_att  = h_k[0, 0] * A[1] @ q_curr_t[:, np.newaxis] * dt + h_k[1, 0] * A[0] @ q_curr_t[:, np.newaxis] * dt
-        # w_pred_att  = h_k[0, 0] * A[0] @ q_curr_t[:, np.newaxis] * dt + h_k[1, 0] * A[1] @ q_curr_t[:, np.newaxis] * dt
 
         # w_pred_att = np.zeros((4, 1))
         # for k in range(2):
         #     h_k_i =  h_k[k, 0]
         #     w_k_i =  A[k] @ q_curr_t[:, np.newaxis]
         #     w_pred_att += h_k_i * w_k_i * dt
-
+        
         # w_pred_att = A[0] @ q_curr_t[:, np.newaxis] * dt
 
         w_pred_curr = parallel_transport(q_att_q, q_curr_q, w_pred_att)

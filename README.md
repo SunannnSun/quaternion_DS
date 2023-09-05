@@ -8,6 +8,7 @@ Quaternion-DS
 
 ### Update
 9/2
+- scale the result angular velcotiy
 - extend to multiple DS learning
 
 9/1

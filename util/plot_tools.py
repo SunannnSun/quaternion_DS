@@ -71,7 +71,7 @@ def animate_rotated_axes(ax, R_list, scale=1):
 
 
     anim = animation.FuncAnimation(fig, _animate, init_func=_init,
-                                frames=len(R_list), interval=2000/len(R_list), blit=False, repeat=True)
+                                frames=len(R_list), interval=1000/len(R_list), blit=False, repeat=True)
     
     
     plt.tight_layout()
