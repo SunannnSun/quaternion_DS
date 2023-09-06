@@ -21,7 +21,7 @@ if __name__ == "__main__":
     q_id_q = canonical_quat(R.identity().as_quat())
 
     K = 3
-    N = 20
+    N = 30
     dt = 0.1
     q_init = R.identity()
     q_train = [q_init]
@@ -34,6 +34,7 @@ if __name__ == "__main__":
         if len(w_train) != 0:
             w_train.pop()
         rot_vec = R.random(random_state=rand_seed).as_rotvec()
+        # rot_vec = np.array([1, 0, 1])
         w_new = rot_vel * rot_vec/np.linalg.norm(rot_vec)
         w_train.append(w_new)
 
@@ -41,18 +42,18 @@ if __name__ == "__main__":
             q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
             q_train.append(q_next)
             if k == K-1:
-                w_train.append(w_train[i]*i/N/K)
+                w_train.append(w_new*(N*K-i)/(N*K))
             else:
                 w_train.append(w_train[i])
             assignment_arr[i+1] = k
 
 
-    # fig = plt.figure()
-    # ax = fig.add_subplot(projection="3d", proj_type="ortho")
-    # ax.figure.set_size_inches(10, 8)
-    # ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
-    # ax.set_aspect("equal", adjustable="box")
-    # plot_tools.animate_rotated_axes(ax, q_train)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d", proj_type="ortho")
+    ax.figure.set_size_inches(10, 8)
+    ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
+    ax.set_aspect("equal", adjustable="box")
+    plot_tools.animate_rotated_axes(ax, q_train)
 
     #### Perform pseudo clustering, return assignment_arr and sufficient statistics ####
     gmm = gmm_class(q_train)
@@ -65,7 +66,7 @@ if __name__ == "__main__":
 
     #### Reproduce the demonstration ####
     # q_init = R.random()
-    dt = 0.05
+    dt = 0.15
     q_init = R.identity()
     
     q_test = [q_init]
@@ -102,6 +103,7 @@ if __name__ == "__main__":
     ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
     ax.set_aspect("equal", adjustable="box")
 
+    plot_tools.plot_rotated_axes(ax, q_train[-1])
     plot_tools.animate_rotated_axes(ax, q_test)
 
 

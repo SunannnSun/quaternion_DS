@@ -121,12 +121,13 @@ def optimize_double_quat_system(q_train, w_train, q_att, postProb):
     A_vars = [A0, A1]
     constraints = [A0 << 0, A1<<0]
  
-    fK = []
+    w_pred_att = 0
     for k in np.arange(K):
         fk = A_vars[k] @ q_train_att.T
-        hk = np.tile(postProb[k, :].T, (M, 1))
-        fK.append(cp.multiply(hk ,fk))
-    w_pred_att = fK[0] + fK[1]
+        # hk = np.tile(postProb[k, :].T, (M, 1))
+        w_pred_att += cp.multiply( np.tile(postProb[k, :].T, (M, 1)), fk)
+        # fK.append(cp.multiply(hk ,fk))
+    # w_pred_att = fK[0] + fK[1]
 
 
 
@@ -155,43 +156,39 @@ def optimize_double_quat_system(q_train, w_train, q_att, postProb):
 
 def optimize_quat_system(q_train, w_train, q_att, postProb):
     """
+    need to vectorize later
+
+    later change from q_next to the actual w angular velocity
+
+    Require additional information on clustering result
     """
     q_id_q      = canonical_quat(R.identity().as_quat())
     q_att_q     = canonical_quat(q_att.as_quat())
     q_train_q   = list_to_arr(q_train)
     q_train_att = riem_log(q_att_q, q_train_q)
 
-
     K = postProb.shape[0]
     N, M = q_train_q.shape
 
+    A_res = np.zeros((K, M, M))
+
+    max_norm = 5
     A_vars = []
     constraints = []
     for k in range(K):
         A_vars.append(cp.Variable((M, M), symmetric=True))
-        constraints += [A_vars[k] << 0]
+        # constraints += [A_vars[k] << 0]
 
-    """
-    objective = 0
-    for i in range(N):
-        q_curr_att  = q_train_att[i, :]
+        constraints += [A_vars[k].T + A_vars[k] << -0.01 * np.eye(4)]
+        constraints += [cp.norm(A_vars[k], 'fro') <= max_norm]
 
-        w_pred_att = 0
-        for k in range(K):
-            w_pred_att += postProb[k, i] * A_vars[k] @ q_curr_att[:, np.newaxis]
 
-        w_curr_q = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
-        w_curr_t = riem_log(q_id_q, w_curr_q)
-        w_curr_att = parallel_transport(q_id_q, q_att_q, w_curr_t)
-
-        objective += cp.norm(w_pred_att - w_curr_att[:, np.newaxis], 2)**2
-    """
+    # """
     w_pred_att = 0
     for k in np.arange(K):
         fk = A_vars[k] @ q_train_att.T
-        hk = np.tile(postProb[k, :].T, (M, 1))
-        w_pred_att += cp.multiply(hk ,fk)
-    
+        w_pred_att += cp.multiply(np.tile(postProb[k, :].T, (M, 1)), fk)
+
 
 
     w_curr_att = np.zeros((M, N))
@@ -200,22 +197,136 @@ def optimize_quat_system(q_train, w_train, q_att, postProb):
         w_curr_t = riem_log(q_id_q, w_curr_q)
         w_curr_att[:, i] = parallel_transport(q_id_q, q_att_q, w_curr_t)
     
-        
 
-    objective = cp.sum(cp.norm2(w_pred_att - w_curr_att, axis=0))
-    # objective = cp.norm(w_pred_att-w_curr_att, 'fro')
+    # objective = cp.sum(cp.norm2(w_pred_att - w_curr_att, axis=0))
+    objective = cp.norm(w_pred_att-w_curr_att, 'fro')
+
     # """
+    # N1 = 31
+    # N2 = 60
+    # # N3 = 60
+
+    # objective = 0
+    # for i in np.arange(N1):
+    #     q_curr_q = canonical_quat(q_train[i].as_quat())
+    #     q_curr_t = riem_log(q_att_q, q_curr_q)
+    #     w_pred_att = A0 @ q_curr_t[:, np.newaxis]
+
+    #     w_curr_q = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
+    #     w_curr_t = riem_log(q_id_q, w_curr_q)
+    #     w_curr_att = parallel_transport(q_id_q, q_att_q, w_curr_t)
+
+    #     objective += cp.norm(w_pred_att - w_curr_att[:, np.newaxis], 2)**2
+
+    # problem = cp.Problem(cp.Minimize(objective), constraints)
+    # problem.solve(solver=cp.MOSEK, verbose=True)
+
+    # objective = 0
+    # for i in np.arange(N1, N2):
+    #     q_curr_q = canonical_quat(q_train[i].as_quat())
+    #     q_curr_t = riem_log(q_att_q, q_curr_q)
+    #     w_pred_att = A1 @ q_curr_t[:, np.newaxis]
+
+    #     w_curr_q = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
+    #     w_curr_t = riem_log(q_id_q, w_curr_q)
+    #     w_curr_att = parallel_transport(q_id_q, q_att_q, w_curr_t)
+
+    #     objective += cp.norm(w_pred_att - w_curr_att[:, np.newaxis], 2)**2
+
+    # problem = cp.Problem(cp.Minimize(objective), constraints)
+    # problem.solve(solver=cp.MOSEK, verbose=True)
+
+    # objective = 0
+    # for i in np.arange(N2, N3):
+    #     q_curr_q = canonical_quat(q_train[i].as_quat())
+    #     q_curr_t = riem_log(q_att_q, q_curr_q)
+    #     w_pred_att = A2 @ q_curr_t[:, np.newaxis]
+
+    #     w_curr_q = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
+    #     w_curr_t = riem_log(q_id_q, w_curr_q)
+    #     w_curr_att = parallel_transport(q_id_q, q_att_q, w_curr_t)
+
+    #     objective += cp.norm(w_pred_att - w_curr_att[:, np.newaxis], 2)**2
 
     problem = cp.Problem(cp.Minimize(objective), constraints)
     problem.solve(solver=cp.MOSEK, verbose=True)
 
 
-    A_res = np.zeros((K, M, M))
+
     for k in range(K):
         A_res[k, :, :] = A_vars[k].value
-        print(A_vars[k].value)
+        # print(A_vars[k].value)
+        # print(np.linalg.norm(A_vars[k].value, 'fro'))
 
     return A_res
+
+
+
+
+
+# def optimize_quat_system(q_train, w_train, q_att, postProb):
+#     """
+#     """
+#     q_id_q      = canonical_quat(R.identity().as_quat())
+#     q_att_q     = canonical_quat(q_att.as_quat())
+#     q_train_q   = list_to_arr(q_train)
+#     q_train_att = riem_log(q_att_q, q_train_q)
+
+
+#     K = postProb.shape[0]
+#     N, M = q_train_q.shape
+
+#     A_vars = []
+#     constraints = []
+#     for k in range(K):
+#         A_vars.append(cp.Variable((M, M), symmetric=True))
+#         constraints += [A_vars[k] << 0]
+
+#     """
+#     objective = 0
+#     for i in range(N):
+#         q_curr_att  = q_train_att[i, :]
+
+#         w_pred_att = 0
+#         for k in range(K):
+#             w_pred_att += postProb[k, i] * A_vars[k] @ q_curr_att[:, np.newaxis]
+
+#         w_curr_q = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
+#         w_curr_t = riem_log(q_id_q, w_curr_q)
+#         w_curr_att = parallel_transport(q_id_q, q_att_q, w_curr_t)
+
+#         objective += cp.norm(w_pred_att - w_curr_att[:, np.newaxis], 2)**2
+#     """
+#     w_pred_att = 0
+#     for k in np.arange(K):
+#         fk = A_vars[k] @ q_train_att.T
+#         hk = np.tile(postProb[k, :].T, (M, 1))
+#         w_pred_att += cp.multiply(hk ,fk)
+    
+
+
+#     w_curr_att = np.zeros((M, N))
+#     for i in range(N):
+#         w_curr_q = canonical_quat(R.from_rotvec(w_train[i]).as_quat())
+#         w_curr_t = riem_log(q_id_q, w_curr_q)
+#         w_curr_att[:, i] = parallel_transport(q_id_q, q_att_q, w_curr_t)
+    
+        
+
+#     objective = cp.sum(cp.norm2(w_pred_att - w_curr_att, axis=0))
+#     # objective = cp.norm(w_pred_att-w_curr_att, 'fro')
+#     # """
+
+#     problem = cp.Problem(cp.Minimize(objective), constraints)
+#     problem.solve(solver=cp.MOSEK, verbose=True)
+
+
+#     A_res = np.zeros((K, M, M))
+#     for k in range(K):
+#         A_res[k, :, :] = A_vars[k].value
+#         print(A_vars[k].value)
+
+#     return A_res
 
 
 

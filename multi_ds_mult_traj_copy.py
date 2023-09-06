@@ -11,43 +11,51 @@ from util.gmm import gmm as gmm_class
 
 if __name__ == "__main__":
     """
-    Demonstrate learning a double linear dynamical system in quaternion space
+    Demonstrate learning a multiple linear dynamical system in quaternion space
     """
-
 
     ##### Create and plot the synthetic demonstration data ####
     rand_seed =  np.random.RandomState(seed=1)
     # rand_seed =  np.random.RandomState()
 
+    q_id_q = canonical_quat(R.identity().as_quat())
 
-    K = 2
-    N = 30
+    K = 3
+    N1 = 20
+    N2 = 50
+    N3 = 80
     dt = 0.1
     q_init = R.identity()
     q_train = [q_init]
+    rot_vel = np.pi/6
+    w_train = []
 
+    assignment_arr = np.zeros((N3+1, ), dtype=int)
     w_init = np.pi/6 * np.array([1, 0, 0]) 
     w_train = [w_init]
+    
+
+    for i in range(N1):
+        q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
+        q_train.append(q_next)
+        w_train.append(w_init)
+        assignment_arr[i+1] = 0 
+
+    w_new = np.pi/6 * np.array([0, 1, 0]) 
+    for i in np.arange(N1, N2):
+        q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
+        q_train.append(q_next)
+        w_train.append(w_new) 
+        assignment_arr[i+1] = 1 
+
+    w_new = np.pi/6 * np.array([0, 0, 1]) 
+    for i in np.arange(N2, N3):
+        q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
+        q_train.append(q_next)
+        w_train.append(w_new * (N3-i)/N3) 
+        assignment_arr[i+1] = 2
 
 
-    q_id_q = canonical_quat(R.identity().as_quat())
-
-    assignment_arr = np.zeros((K*N+1, ), dtype=int)
-
-    for k in range(K):
-        if len(w_train) != 0:
-            w_train.pop()
-            w_new = np.pi/3 * np.array([1, 1, 1]) 
-            w_train.append(w_new)
-
-        for i in np.arange(N*k, N*(k+1)):
-            q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
-            q_train.append(q_next)
-            if k == K-1:
-                w_train.append(w_new * (N*K-i)/(N*K))
-            else:
-                w_train.append(w_init)
-            assignment_arr[i+1] = k
 
 
     fig = plt.figure()
@@ -57,28 +65,24 @@ if __name__ == "__main__":
     ax.set_aspect("equal", adjustable="box")
     plot_tools.animate_rotated_axes(ax, q_train)
 
-
-
     #### Perform pseudo clustering, return assignment_arr and sufficient statistics ####
     gmm = gmm_class(q_train)
     gmm.cluster(assignment_arr)
     gmm.return_norma_class(q_train, assignment_arr)
     postProb = gmm.postLogProb(q_train)
 
-
-    # A = optimize_tools.optimize_double_quat_system(q_train, w_train, q_train[-1], postProb)
     A = optimize_tools.optimize_quat_system(q_train, w_train, q_train[-1], postProb)
-
+    
 
     #### Reproduce the demonstration ####
     # q_init = R.random()
     dt = 0.1
     q_init = R.identity()
-
+    
     q_test = [q_init]
     q_att_q = canonical_quat(q_train[-1].as_quat())
 
-    for i in range(N+100):
+    for i in range(N3+100):
         q_curr   = q_test[i]
         q_curr_q = canonical_quat(q_curr.as_quat())
         q_curr_att = riem_log(q_att_q, q_curr_q)
@@ -110,3 +114,6 @@ if __name__ == "__main__":
     ax.set_aspect("equal", adjustable="box")
 
     plot_tools.animate_rotated_axes(ax, q_test)
+
+
+
