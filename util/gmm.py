@@ -1,25 +1,51 @@
 import numpy as np
+
 from scipy.spatial.transform import Rotation as R
-from .quat_tools import *
-# from .normal import normal as normal_class
 from scipy.stats import multivariate_normal
+from sklearn.mixture import BayesianGaussianMixture
 
-
+from .quat_tools import *
 
 class gmm:
-    def __init__(self, *args_):
-
-        self.q_list = args_[0]
+    def __init__(self, q_att, q_list):
         
+        self.q_list = q_list
+
+        q_list_q   = list_to_arr(q_list)
+        q_att_q = canonical_quat(q_att.as_quat())
+        self.q_list_att = riem_log(q_att_q, q_list_q)
+
+        # self.q_att   = q_att
+        # self.q_att_q = canonical_quat(q_att.as_quat())
+        # self.q_list  = q_list
+        # self.q_list_q   = list_to_arr(self.q_list)
+        # self.q_list_att = riem_log(self.q_att_q, self.q_list_q)
 
 
-    def cluster(self, dummy_arr): #dummy
+
+    def begin(self, *args): #
         """
         Fill in the actual clustering algorithm and return the result assignment_arr
         """
+        if len(args) == 1:
+            assignment_arr = args[0]
+        elif len(args) == 0:
+            assignment_arr = BayesianGaussianMixture(n_components=5, random_state=2).fit_predict(self.q_list_att)
 
-        self.assignment_arr = dummy_arr
+        rearrange_list = []
+        for idx, entry in enumerate(assignment_arr):
+            if not rearrange_list:
+                rearrange_list.append(entry)
+            if entry not in rearrange_list:
+                rearrange_list.append(entry)
+                assignment_arr[idx] = len(rearrange_list) - 1
+            else:
+                assignment_arr[idx] = rearrange_list.index(entry)   
 
+        self.assignment_arr = assignment_arr 
+        self.return_norma_class(self.q_list, self.assignment_arr)
+
+        return self.assignment_arr
 
 
     def return_norma_class(self, q_list, *args_):

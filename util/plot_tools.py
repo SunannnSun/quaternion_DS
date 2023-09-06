@@ -2,7 +2,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from scipy.spatial.transform import Rotation as R
+from.quat_tools import *
 
+def plot_rotated_axes_sequence(q_list, N=3):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d", proj_type="ortho")
+    
+    seq = np.linspace(0, len(q_list)-1, N, dtype=int)
+    print(seq)
+    for i in range(N):
+        plot_rotated_axes(ax, q_list[seq[i]],  offset=(3*i, 0, 0))
+
+
+    ax.set(xlim=(-1.25, 1.25 + 3*N-3), ylim=(-1.25, 1.25), zlim=(-1.25, 1.25))
+    ax.set(xticks=range(-1, 2 + 3*N-3), yticks=[-1, 0, 1], zticks=[-1, 0, 1])
+    ax.set_aspect("equal", adjustable="box")
+    ax.figure.set_size_inches(2*N, 5)
+    plt.tight_layout()
+    plt.show()
 
 
 def plot_rotated_axes(ax, r , offset=(0, 0, 0), scale=1):
@@ -30,7 +47,7 @@ def plot_rotated_axes(ax, r , offset=(0, 0, 0), scale=1):
         ax.text(*text_plot, axlabel.upper(), color=c,
                 va="center", ha="center")
     
-    plt.tight_layout()
+    # plt.tight_layout()
     
 
 
@@ -101,10 +118,37 @@ def _set_axes_radius(ax, origin, radius):
 
 
 
+def plot_quat(q_list):
+
+    q_list_q = list_to_arr(q_list)
+
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.figure.set_size_inches(12, 6)
+
+    N = q_list_q.shape[0]
+
+
+    colors = ['red', 'blue', 'lime', 'magenta']
+    for k in range(4):
+        ax.plot(np.arange(N), q_list_q[:, k], color=colors[k])
+
+    ax.legend(['x', 'y', 'z', 'w'])
+
+    fig, axs = plt.subplots(4, 1, figsize=(12, 8))
+
+    N = q_list_q.shape[0]
+    colors = ['red', 'blue', 'lime', 'magenta']
+    for k in range(4):
+        axs[k].plot(np.arange(N), q_list_q[:, k], color=colors[k])
+
+
+    plt.show()
+
 
 if __name__ == "__main__":
 
-
+    
     r0 = R.identity()
     r1 = R.from_euler("ZYX", [90, -30, 0], degrees=True)  # intrinsic
     r2 = R.from_euler("zyx", [90, -30, 0], degrees=True)  # extrinsic
@@ -112,16 +156,23 @@ if __name__ == "__main__":
 
 
 
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection="3d", proj_type="ortho")
+    # # ax.figure.set_size_inches(10, 8)
+    # # ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
+    # # ax.set_aspect("equal", adjustable="box")
+    # # plot_sequence_rotated_axes(ax, r_list)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(projection="3d", proj_type="ortho")
-    ax.figure.set_size_inches(10, 8)
-    ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
-    ax.set_aspect("equal", adjustable="box")
+    # ax.set(xlim=(-1.25, 7.25), ylim=(-1.25, 1.25), zlim=(-1.25, 1.25))
+    # ax.set(xticks=range(-1, 8), yticks=[-1, 0, 1], zticks=[-1, 0, 1])
+    # ax.set_aspect("equal", adjustable="box")
+    # ax.figure.set_size_inches(6, 5)
+    # plt.tight_layout()
+    # plt.show()
 
+    plot_rotated_axes_sequence(r_list)
 
-
-    animate_rotated_axes(ax, r_list)
+    # animate_rotated_axes(ax, r_list)
 
     # plot_rotated_axes(ax, r1)
 

@@ -15,8 +15,8 @@ if __name__ == "__main__":
     """
 
     ##### Create and plot the synthetic demonstration data ####
-    rand_seed =  np.random.RandomState(seed=1)
-    # rand_seed =  np.random.RandomState()
+    # rand_seed =  np.random.RandomState(seed=1)
+    rand_seed =  np.random.RandomState()
 
     q_id_q = canonical_quat(R.identity().as_quat())
 
@@ -56,17 +56,20 @@ if __name__ == "__main__":
     plot_tools.animate_rotated_axes(ax, q_train)
 
     #### Perform pseudo clustering, return assignment_arr and sufficient statistics ####
-    gmm = gmm_class(q_train)
-    gmm.cluster(assignment_arr)
-    gmm.return_norma_class(q_train, assignment_arr)
+
+    gmm = gmm_class(q_train[-1], q_train)
+    labels = gmm.begin()
+    
+ 
+    # gmm.begin(assignment_arr)
     postProb = gmm.postLogProb(q_train)
 
     A = optimize_tools.optimize_quat_system(q_train, w_train, q_train[-1], postProb)
     
-
+    print(labels)
     #### Reproduce the demonstration ####
     # q_init = R.random()
-    dt = 0.15
+    dt = 0.1
     q_init = R.identity()
     
     q_test = [q_init]
@@ -105,6 +108,9 @@ if __name__ == "__main__":
 
     plot_tools.plot_rotated_axes(ax, q_train[-1])
     plot_tools.animate_rotated_axes(ax, q_test)
+
+
+    plot_tools.plot_quat(q_train)
 
 
 
