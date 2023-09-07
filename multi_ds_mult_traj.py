@@ -15,12 +15,12 @@ if __name__ == "__main__":
     """
 
     ##### Create and plot the synthetic demonstration data ####
-    # rand_seed =  np.random.RandomState(seed=1)
+    # rand_seed =  np.random.RandomState(seed=2)
     rand_seed =  np.random.RandomState()
 
     q_id_q = canonical_quat(R.identity().as_quat())
 
-    K = 3
+    K = 4
     N = 30
     dt = 0.1
     q_init = R.identity()

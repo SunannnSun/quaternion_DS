@@ -7,9 +7,18 @@ Quaternion-DS
 ---
 
 ### Update
+9/8
+- extend to pose
+
+9/7
+- generate angular velocity given only orientation(world and body frame)
+- test all four tasks from pos_ori dataset
+
+
+
 9/2
-- scale the result angular velcotiy
-- extend to multiple DS learning
+- ~~scale the result angular velcotiy~~
+- ~~extend to multiple DS learning~~
 
 9/1
 - ~~propose a feasible dimension reduction to tackle singular covariance matrix resulting from unit vectors~~
@@ -27,7 +36,7 @@ Quaternion-DS
 - ~~optimize_single_system~~
 - ~~retrieve mean and covariance~~
 - ~~construct quat normal dist~~
-- plot sequence of rotation and show clusters in time series
+- ~~plot sequence of rotation and show clusters in time series~~
 
 ---
 thoughts

@@ -52,8 +52,8 @@ if __name__ == "__main__":
     
     #### Reproduce the demonstration ####
 
-    # q_init = R.random()
-    q_init = R.identity()
+    q_init = R.random()
+    # q_init = R.identity()
 
     q_test = [q_init]
     q_att_q = canonical_quat(q_train[-1].as_quat())
