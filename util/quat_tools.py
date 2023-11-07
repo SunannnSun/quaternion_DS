@@ -9,24 +9,15 @@ from scipy.spatial.transform import Rotation as R
 
 def parallel_transport(x, y, v):
     """
+    Vectorized operation
+    
     parallel transport a vector u from space defined by x to a new space defined by y
 
-    @param x quat representation
-    @param y quat representation
+    @param: x original tangent point, np.array()
+    @param: y new tangent point, np.array
     @param v vector in tangent space (compatible with both 1-D and 2-D)
 
-    @note the matrix operation A is defect... will fix it later
     """
-
-    # M = v.shape[0]
-    # u = riem_log(x, y)
-    # u_norm = np.linalg.norm(u)
-    # u_dir = (u / u_norm)[:, np.newaxis]
-    # A = np.sin(u_norm) *  -x[:, np.newaxis] @ u_dir.T + np.cos(u_norm) * u_dir @ u_dir.T + (np.eye(M) - u_dir@u_dir.T)
-    # A = np.eye(M) - np.sin()
-    # u1 = A @ v
-    # u1 = u1[:, 0]
-    # return A @ v
 
     log_xy = riem_log(x, y)
     log_yx = riem_log(y, x)
@@ -35,15 +26,16 @@ def parallel_transport(x, y, v):
     if d_xy == 0:
         return v
 
-    if v.ndim == 2:
+    if v.ndim == 2 and v.shape[1]==1: # 2D vector
         u = v[:, 0] - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
 
-    elif v.ndim == 1:
+    elif v.ndim == 2 and v.shape[0]>1: # 2D matrix
+        u = v - 1/d_xy**2 * v @ log_xy[:, np.newaxis] * np.tile(log_xy + log_yx, (v.shape[0] ,1) )
+
+    elif v.ndim == 1: # 1D vector
         u = v - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
 
-    # if any(np.isnan(u)):
-    #     c= 1
-    #     pass
+
 
     return u
 

@@ -68,9 +68,9 @@ class gmm:
         else:
             assignment_arr = np.zeros((self.N, ), dtype=int)
 
-        self.K = assignment_arr.max()+1
+        self.K = int(assignment_arr.max()+1)
 
-        Prior  = np.zeros((self.K, ))
+        Prior   = np.zeros((self.K, ))
         Mu      = np.zeros((self.K, M), dtype=np.float32)
         Sigma   = np.zeros((self.K, M, M), dtype=np.float32)
 

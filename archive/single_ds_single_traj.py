@@ -10,32 +10,29 @@ from util.quat_tools import *
 
 if __name__ == "__main__":
     """
-    Demonstrate learning a single linear quaternion-based dynamical system in a single behaviour quaternion trajectory
+    :param q_train: list of Rotation objects representing orientation, should be length N
+    :param w_train: list of Rotation objects representing angular velocity, should be length N-1
+
+
+    :note: w_train are all expressed in terms of world coordinate in this case origin
     """
 
-    ##### Create and plot the synthetic demonstration data ####
-
+    # Define the identity rotation as origin
     q_id_q = canonical_quat(R.identity().as_quat())  
 
-
+    # Simulate forward to obtain the sequence of rotations
     N = 40
     dt = 0.1
+
+    q_train = [R.identity()] * N
+    w_train = [R.identity()] * (N-1)
+
     q_init = R.identity()
-    q_train = [q_init]
+    q_train[0] = q_init
 
-    """
-    Change w_init to desired rot_vec configuration
-    """
-
-    w_init = np.pi/6 * np.array([1, 0, 1]) 
-    w_train = [w_init]
-
-
-    for i in range(N):
-        q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
-        q_train.append(q_next)
-        w_train.append(w_init*(N-i)/N)
-
+    for k in range(N-1):
+        w_train[k]   = R.from_rotvec(np.pi/6 * np.array([1, 0, 1]) * (N-k)/N)
+        q_train[k+1] = R.from_rotvec(w_train[k].as_rotvec() * dt) * q_train[k]
 
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d", proj_type="ortho")
@@ -47,11 +44,10 @@ if __name__ == "__main__":
 
     #### Learn the matrix A of single linear DS ####
 
-    A = optimize_tools.optimize_single_quat_system(q_train, w_train,  q_train[-1], opt=1)
+    A = optimize_tools.optimize_single_quat_system(q_train, w_train,  q_train[-1], opt=3)
 
     
     #### Reproduce the demonstration ####
-
     q_init = R.random()
     # q_init = R.identity()
 
@@ -81,3 +77,4 @@ if __name__ == "__main__":
     ax.set_aspect("equal", adjustable="box")
 
     plot_tools.animate_rotated_axes(ax, q_test)
+

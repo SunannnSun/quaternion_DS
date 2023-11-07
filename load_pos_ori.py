@@ -5,6 +5,7 @@ from scipy.spatial.transform import Rotation as R
 from util import plot_tools, optimize_tools
 import matplotlib.pyplot as plt
 from util.gmm import gmm as gmm_class
+from util.quat_tools import *
 
 
 def get_sequence(seq_file):
@@ -24,11 +25,15 @@ def get_sequence(seq_file):
         seq = [line.strip() for line in x]
     return seq
     
+
+
+
+
 dir_path     = os.path.dirname(os.path.realpath(__file__))
 seq_file = os.path.join(dir_path, "pos_ori", "robottasks_pos_ori_sequence_4.txt")
 filenames = get_sequence(seq_file)
 
-task_id = 0
+task_id = 1
 datafile = os.path.join(dir_path, "pos_ori", filenames[task_id])
 data = np.load(datafile)  
 
@@ -63,6 +68,23 @@ print(Data[0, :])
 
 q_train = [R.from_quat(q) for q in Data.tolist()]
 
+q_id_q = canonical_quat(R.identity().as_quat())
+
+w_train = []
+dt = 0.1
+for i in np.arange(1, len(q_train)):
+    q_curr = q_train[i-1]
+    q_next = q_train[i]
+
+    dq_dt = canonical_quat((q_next * q_curr.inv()).as_euler('xyz'))/dt
+
+    w_train.append(dq_dt)
+
+    # w_train.append((q_next * q_curr.inv()).as_euler('xyz'))
+w_train.append(dq_dt*0)
+
+
+
 print(len(q_train))
 
 fig = plt.figure()
@@ -74,6 +96,8 @@ plot_tools.animate_rotated_axes(ax, q_train)
 
 gmm = gmm_class(q_train[-1], q_train)
 labels = gmm.begin()
-    
+postProb = gmm.postLogProb(q_train)
 
 print(labels)
+
+A = optimize_tools.optimize_quat_system(q_train, w_train, q_train[-1], postProb)

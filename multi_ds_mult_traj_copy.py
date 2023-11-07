@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     #### Perform pseudo clustering, return assignment_arr and sufficient statistics ####
     gmm = gmm_class(q_train)
-    gmm.cluster(assignment_arr)
+    gmm.begin(assignment_arr)
     gmm.return_norma_class(q_train, assignment_arr)
     postProb = gmm.postLogProb(q_train)
 

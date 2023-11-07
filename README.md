@@ -7,8 +7,19 @@ Quaternion-DS
 ---
 
 ### Update
+
+11/7
+- archived all the outdated function and files
+- centralize optimize into one single function
+- vectorize parallel transport in `quat_tools.py`
+
+
+
 9/8
 - extend to pose
+- test two framework: one fuse pos and ori, another one separately but ori dependent on pos in gamma (hierarchical model)
+- explore the correlation in 7 by 7 covariance matrix
+
 
 9/7
 - generate angular velocity given only orientation(world and body frame)

@@ -19,49 +19,48 @@ if __name__ == "__main__":
     rand_seed =  np.random.RandomState(seed=1)
     # rand_seed =  np.random.RandomState()
 
-
-    K = 2
-    N = 30
-    dt = 0.1
-    q_init = R.identity()
-    q_train = [q_init]
-
-    w_init = np.pi/6 * np.array([1, 0, 0]) 
-    w_train = [w_init]
-
-
     q_id_q = canonical_quat(R.identity().as_quat())
 
-    assignment_arr = np.zeros((K*N+1, ), dtype=int)
+    K = 2
+    N = 40
+    dt = 0.1
 
-    for k in range(K):
-        if len(w_train) != 0:
-            w_train.pop()
-            w_new = np.pi/3 * np.array([1, 1, 1]) 
-            w_train.append(w_new)
+    q_train = [R.identity()] * (N * K)
+    w_train = [R.identity()] * (N * K -1)
+    assignment_arr = np.zeros((N*K, ))
 
-        for i in np.arange(N*k, N*(k+1)):
-            q_next =  R.from_rotvec(w_train[i] * dt) * q_train[i]
-            q_train.append(q_next)
-            if k == K-1:
-                w_train.append(w_new * (N*K-i)/(N*K))
-            else:
-                w_train.append(w_init)
-            assignment_arr[i+1] = k
+    q_init = R.identity()
+    q_train[0] = q_init
 
 
-    fig = plt.figure()
-    ax = fig.add_subplot(projection="3d", proj_type="ortho")
-    ax.figure.set_size_inches(10, 8)
-    ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
-    ax.set_aspect("equal", adjustable="box")
-    plot_tools.animate_rotated_axes(ax, q_train)
+    for k in range (N * K -1):
 
+        if (k // N == 0):
+            w_train[k] = R.from_rotvec(np.pi/6 * np.array([1, 0, 0]))
+        else:
+            w_train[k] = R.from_rotvec(np.pi/6 * np.array([0, 0, 1]) * (1 - k/(N*K)))
+
+        # Rotate about the world frame
+        q_train[k+1] =  R.from_rotvec(w_train[k].as_rotvec() * dt) * q_train[k]
+        assignment_arr[k+1] = k // N
+        # Rotate about the body frame
+        # w_k_dt = R.from_rotvec(w_train[k].as_rotvec() * dt)
+        # q_train[k+1] = R.from_matrix(w_k_dt.apply(q_train[k].as_matrix()))
+
+
+
+
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection="3d", proj_type="ortho")
+    # ax.figure.set_size_inches(10, 8)
+    # ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
+    # ax.set_aspect("equal", adjustable="box")
+    # plot_tools.animate_rotated_axes(ax, q_train)
 
 
     #### Perform pseudo clustering, return assignment_arr and sufficient statistics ####
-    gmm = gmm_class(q_train)
-    gmm.cluster(assignment_arr)
+    gmm = gmm_class(q_train[-1], q_train)
+    gmm.begin(assignment_arr)
     gmm.return_norma_class(q_train, assignment_arr)
     postProb = gmm.postLogProb(q_train)
 
@@ -110,3 +109,4 @@ if __name__ == "__main__":
     ax.set_aspect("equal", adjustable="box")
 
     plot_tools.animate_rotated_axes(ax, q_test)
+
