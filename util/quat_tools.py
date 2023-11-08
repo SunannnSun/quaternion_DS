@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
+
 """
 @note all operations below, of which the return is a vector, return 1-D array, 
       unless multiple inputs are given in vectorized operations
@@ -54,6 +55,10 @@ def unsigned_angle(x, y):
     note: "/" divide operator equivalent to np.divide, performing element-wise division
     note:  np.dot, np.linalg.norm(keepdims=False) and the return angle are 1-D array
     """
+    if isinstance(x, R):
+        x = canonical_quat(x.as_quat())
+    if isinstance(y, R):
+        y = canonical_quat(y.as_quat())
 
     x = x / np.linalg.norm(x)
     if y.ndim == 1:
@@ -83,6 +88,11 @@ def riem_log(x, y):
     @note special cases to take care of when x=y and angle(x, y) = pi
     @note IF further normalization needed after adding perturbation?
     """
+    if isinstance(x, R):
+        x = canonical_quat(x.as_quat())
+    if isinstance(y, R):
+        y = canonical_quat(y.as_quat())
+
     x = x / np.linalg.norm(x)
     if y.ndim == 1:
         y = y / np.linalg.norm(y)

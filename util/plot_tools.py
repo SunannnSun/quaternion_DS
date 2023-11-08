@@ -4,25 +4,9 @@ import matplotlib.animation as animation
 from scipy.spatial.transform import Rotation as R
 from.quat_tools import *
 
-def plot_rotated_axes_sequence(q_list, N=3):
-    fig = plt.figure()
-    ax = fig.add_subplot(projection="3d", proj_type="ortho")
-    
-    seq = np.linspace(0, len(q_list)-1, N, dtype=int)
-    print(seq)
-    for i in range(N):
-        plot_rotated_axes(ax, q_list[seq[i]],  offset=(3*i, 0, 0))
 
 
-    ax.set(xlim=(-1.25, 1.25 + 3*N-3), ylim=(-1.25, 1.25), zlim=(-1.25, 1.25))
-    ax.set(xticks=range(-1, 2 + 3*N-3), yticks=[-1, 0, 1], zticks=[-1, 0, 1])
-    ax.set_aspect("equal", adjustable="box")
-    ax.figure.set_size_inches(2*N, 5)
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_rotated_axes(ax, r , offset=(0, 0, 0), scale=1):
+def _plot_rotated_axes(ax, r , offset=(0, 0, 0), scale=1):
     """
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.html
     """
@@ -47,17 +31,40 @@ def plot_rotated_axes(ax, r , offset=(0, 0, 0), scale=1):
         ax.text(*text_plot, axlabel.upper(), color=c,
                 va="center", ha="center")
     
-    # plt.tight_layout()
     
 
 
-def animate_rotated_axes(ax, R_list, scale=1):
+def plot_rotated_axes_sequence(q_list, N=3):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d", proj_type="ortho")
+    
+    seq = np.linspace(0, len(q_list)-1, N, dtype=int)
+    for i in range(N):
+        _plot_rotated_axes(ax, q_list[seq[i]],  offset=(3*i, 0, 0))
+
+
+    ax.set(xlim=(-1.25, 1.25 + 3*N-3), ylim=(-1.25, 1.25), zlim=(-1.25, 1.25))
+    ax.set(xticks=range(-1, 2 + 3*N-3), yticks=[-1, 0, 1], zticks=[-1, 0, 1])
+    ax.set_aspect("equal", adjustable="box")
+    ax.figure.set_size_inches(2*N, 5)
+    plt.tight_layout()
+    plt.show()
+
+
+
+
+
+def animate_rotated_axes(R_list, scale=1):
     """
-    Yet to decide the input type: list of R object...for now
+    List of Rotation object
     """
 
-    if 'fig' not in locals() or 'fig' not in globals():
-        fig = ax.get_figure()
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d", proj_type="ortho")
+    ax.figure.set_size_inches(10, 8)
+    ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
+    ax.set_aspect("equal", adjustable="box")
+
 
     for axis in (ax.xaxis, ax.yaxis, ax.zaxis):
         axlabel = axis.axis_name
@@ -97,24 +104,6 @@ def animate_rotated_axes(ax, R_list, scale=1):
 
 
 
-def set_axes_equal(ax: plt.Axes):
-    """Set 3D plot axes to equal scale.
-    https://stackoverflow.com/questions/13685386/how-to-set-the-equal-aspect-ratio-for-all-axes-x-y-z
-    """
-    limits = np.array([
-        ax.get_xlim3d(),
-        ax.get_ylim3d(),
-        ax.get_zlim3d(),
-    ])
-    origin = np.mean(limits, axis=1)
-    radius = 0.5 * np.max(np.abs(limits[:, 1] - limits[:, 0]))
-    _set_axes_radius(ax, origin, radius)
-
-
-
-def _set_axes_radius(ax, origin, radius):
-    x, y, z = origin
-    ax.set(xlim=(x - radius, x + radius), ylim=(y - radius, y + radius), zlim=(z - radius, z + radius))
 
 
 
@@ -175,5 +164,4 @@ if __name__ == "__main__":
     # animate_rotated_axes(ax, r_list)
 
     # plot_rotated_axes(ax, r1)
-
 
