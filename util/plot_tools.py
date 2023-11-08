@@ -47,8 +47,8 @@ def plot_rotated_axes_sequence(q_list, N=3):
     ax.set(xticks=range(-1, 2 + 3*N-3), yticks=[-1, 0, 1], zticks=[-1, 0, 1])
     ax.set_aspect("equal", adjustable="box")
     ax.figure.set_size_inches(2*N, 5)
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
 
 
 
@@ -115,24 +115,69 @@ def plot_quat(q_list):
     ax = fig.add_subplot()
     ax.figure.set_size_inches(12, 6)
 
+    label_list = ['x', 'y', 'z', 'w']
     N = q_list_q.shape[0]
 
 
     colors = ['red', 'blue', 'lime', 'magenta']
     for k in range(4):
-        ax.plot(np.arange(N), q_list_q[:, k], color=colors[k])
+        ax.plot(np.arange(N), q_list_q[:, k], color=colors[k], label = label_list[k])
 
-    ax.legend(['x', 'y', 'z', 'w'])
+    ax.legend()
 
     fig, axs = plt.subplots(4, 1, figsize=(12, 8))
 
     N = q_list_q.shape[0]
     colors = ['red', 'blue', 'lime', 'magenta']
     for k in range(4):
-        axs[k].plot(np.arange(N), q_list_q[:, k], color=colors[k])
+        axs[k].plot(np.arange(N), q_list_q[:, k], color=colors[k], label = label_list[k])
+        axs[k].legend(loc="upper left")
+
+    # plt.show()
 
 
-    plt.show()
+def plot_4d_coord(q_list):
+
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.figure.set_size_inches(12, 6)
+
+    label_list = ['w', 'x', 'y', 'z']
+    N = q_list.shape[0]
+
+
+    colors = ['red', 'blue', 'lime', 'magenta']
+    for k in range(4):
+        ax.plot(np.arange(N), q_list[:, k], color=colors[k], label = label_list[k])
+
+    ax.legend()
+
+
+
+def plot_rot_vec(w_list):
+    
+    N = len(w_list)
+    w_arr = np.zeros((N, 3))
+
+    for i in range(N):
+        w_arr[i, :] = w_list[i].as_euler('xyz')
+
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.figure.set_size_inches(12, 6)
+
+
+    label_list = ['w_x', 'w_y', 'w_z']
+
+    colors = ['red', 'blue', 'lime', 'magenta']
+    for k in range(3):
+        ax.plot(np.arange(N), w_arr[:, k], color=colors[k], label = label_list[k])
+
+    ax.legend()
+
+
+
+
 
 
 if __name__ == "__main__":

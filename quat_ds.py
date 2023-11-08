@@ -10,8 +10,6 @@ from util.gmm import gmm as gmm_class
 
 class quat_ds:
     def __init__(self, q_train, w_train, q_att) -> None:
-        "pass high level parameters"
-        self.q_id    = R.identity()
         self.q_att   = q_att
         self.q_train = q_train
         self.w_train = w_train
@@ -21,7 +19,7 @@ class quat_ds:
     
     def _cluster(self):
         gmm = gmm_class(self.q_att, self.q_train)
-        gmm.begin()
+        label = gmm.begin()
         self.postProb = gmm.postLogProb(self.q_train)
         self.gmm = gmm
 

@@ -60,7 +60,7 @@ def unsigned_angle(x, y):
     if isinstance(y, R):
         y = canonical_quat(y.as_quat())
 
-    x = x / np.linalg.norm(x)
+ 
     if y.ndim == 1:
         y = y / np.linalg.norm(y)
     elif y.ndim == 2 and y.shape[1] > 1:
@@ -69,7 +69,11 @@ def unsigned_angle(x, y):
         y = (y / np.linalg.norm(y, axis=0, keepdims=False))[:, 0]
 
 
-    dotProduct = np.dot(y, x) 
+    if x.ndim == 2 and x.shape[1] > 1:
+        dotProduct = np.sum(x * y, axis=1)
+    else:
+        dotProduct = np.dot(y, x) 
+
 
     angle = np.arccos(np.clip(dotProduct, -1, 1))
 
@@ -93,7 +97,11 @@ def riem_log(x, y):
     if isinstance(y, R):
         y = canonical_quat(y.as_quat())
 
-    x = x / np.linalg.norm(x)
+    if x.ndim == 2 and x.shape[-1] > 1:
+        x = x / np.tile(np.linalg.norm(x, axis=1, keepdims=True), (1,4))
+    else:
+        x = x / np.linalg.norm(x)
+
     if y.ndim == 1:
         y = y / np.linalg.norm(y)
     elif y.ndim == 2 and y.shape[1] > 1:
@@ -111,8 +119,17 @@ def riem_log(x, y):
             tanDir = y - np.dot(y+0.001, x) * x 
 
         v = angle * tanDir / np.linalg.norm(tanDir)
+    
 
-        
+    elif x.shape[0] == y.shape[0]:
+        y[angle==np.pi] += 0.001
+
+        tanDir = y - np.tile(np.sum(x * y, axis=1,keepdims=True),(1, 4)) * x
+        v = np.tile(angle[:, np.newaxis],(1,4)) * tanDir / np.linalg.norm(tanDir, axis=1, keepdims=True)
+
+        v[angle == 0] = tanDir[angle==0] 
+
+
     elif y.ndim == 2:
         y[angle==np.pi] += 0.001
 
@@ -189,6 +206,8 @@ def list_to_arr(q_list):
     q_arr = np.zeros((N, M))
 
     for i in range(N):
-        q_arr[i, :] = canonical_quat(q_list[i].as_quat())
+        q_arr[i, :] = q_list[i].as_quat()
+
+        # q_arr[i, :] = canonical_quat(q_list[i].as_quat())
 
     return q_arr
