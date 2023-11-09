@@ -1,13 +1,10 @@
 import os
-from tkinter import W
 import numpy as np
-from util import plot_tools
-from scipy.spatial.transform import Rotation as R
-from util import plot_tools, optimize_tools, quat_tools
 import matplotlib.pyplot as plt
-from util.gmm import gmm as gmm_class
-from util.quat_tools import *
+from scipy.spatial.transform import Rotation as R
 from scipy.signal import savgol_filter
+
+from util import plot_tools, optimize_tools, quat_tools
 
 
 
@@ -52,9 +49,9 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     Manually dealing with multiple trajectories by assigning correct angular velocity near start and end of each trajecotry; i.e. apply 
     Savgol separately for each individual trajectory
     """
+    file_path           = os.path.dirname(os.path.realpath(__file__))
+    dir_path            = os.path.dirname(file_path)
 
-
-    dir_path    = os.path.dirname(os.path.realpath(__file__))
     seq_file    = os.path.join(dir_path, "dataset", "pos_ori", "robottasks_pos_ori_sequence_4.txt")
     filenames   = _get_sequence(seq_file)
     datafile    = os.path.join(dir_path, "dataset", "pos_ori", filenames[task_id])

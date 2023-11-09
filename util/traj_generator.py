@@ -40,4 +40,4 @@ def generate_traj(K=2, N=40, dt=0.1, **kwargs):
     q_att = q_train[-1]
 
 
-    return q_init, q_att, q_train, w_train
+    return q_init, q_att, q_train, w_train, dt
