@@ -6,7 +6,23 @@ Quaternion-DS
 
 ---
 
+### Double cover of quaternion
+- It turns out that though -q and q represent the same rotation, they yield greatly different results when dealing with riemannian logarithm.
+For example, when projecting a decaying sequence of angular velocity (in quaternion) wrt identity, one should expect the projected angular velocity
+converge to zero; i.e. the zero rotation is equivalent to the identity quaternion. However, if the point of tangency is negative identity, which is
+still identity and representing zero rotation, the projected angular velocity is now DIVERGING! 
+- Solution could be: 
+    1. force cannonical representation of quaternions; need to ensure smoothness of trajectory in both orientation and angular velocity on real data
+    2. double-cover invariant in riemannian logarithm
+
+
+
+
+
 ### Update
+11/9 
+- deal with double cover of quaternion
+
 
 11/7
 - archived all the outdated function and files

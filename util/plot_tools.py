@@ -136,7 +136,7 @@ def plot_quat(q_list):
     # plt.show()
 
 
-def plot_4d_coord(q_list):
+def plot_4d_coord(q_list, **argv):
 
     fig = plt.figure()
     ax = fig.add_subplot()
@@ -149,6 +149,9 @@ def plot_4d_coord(q_list):
     colors = ['red', 'blue', 'lime', 'magenta']
     for k in range(4):
         ax.plot(np.arange(N), q_list[:, k], color=colors[k], label = label_list[k])
+    
+    if "title" in argv:
+        ax.set_title(argv["title"])
 
     ax.legend()
 

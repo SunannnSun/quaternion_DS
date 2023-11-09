@@ -25,8 +25,9 @@ print(Rz_eqv.as_quat())
 
 # Transform Ry to world frame in matrix
 
-Rz_mat = Rx.as_matrix() @ Ry.as_matrix() @ Rx.as_matrix()
-print(Rz_mat)
+# Rx_mat = Rx.as_matrix() 
+# Ry_mat = Ry.as_matrix()
+# print(Rx_mat@Ry_mat@Rx_mat)
 
 
 

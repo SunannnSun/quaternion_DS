@@ -36,6 +36,8 @@ def _process_xy(x, y):
     
     Except when both x and y are single R objects, always expand and cast the single R object to meet the same shape
     """
+    
+    M = 4
     if isinstance(x, R) and isinstance(y, list):
         N = len(y)
         x = np.tile(x.as_quat()[np.newaxis, :], (N,1))
@@ -55,14 +57,17 @@ def _process_xy(x, y):
         y = y.as_quat()[np.newaxis, :]
 
     elif isinstance(x, np.ndarray) and isinstance(y, np.ndarray):
-        pass
+        if x.ndim == 1 and y.ndim == 1:
+            x = x[np.newaxis, :]
+            y = y[np.newaxis, :]
+        M = x.shape[1]
 
     else:
         print("Invalid inputs in quaternion operation")
         sys.exit()
 
-    x = x / np.tile(np.linalg.norm(x, axis=1, keepdims=True), (1,4))
-    y = y / np.tile(np.linalg.norm(x, axis=1, keepdims=True), (1,4))
+    x = x / np.tile(np.linalg.norm(x, axis=1, keepdims=True), (1,M))
+    y = y / np.tile(np.linalg.norm(x, axis=1, keepdims=True), (1,M))
     
 
     return x,y
@@ -127,18 +132,21 @@ def riem_log(x, y):
 
 
     x, y = _process_xy(x, y)
+    y_copy = y.copy()
+
+    N, M = x.shape
 
     angle = unsigned_angle(x, y) 
 
     y[angle == np.pi] += 0.001
 
-    x_T_y = np.tile(np.sum(x * y, axis=1,keepdims=True), (1,4))
-
+    x_T_y = np.tile(np.sum(x * y, axis=1,keepdims=True), (1,M))
+    
     x_T_y_x = x_T_y * x
 
-    u = np.tile(angle[:, np.newaxis]/np.linalg.norm(x_T_y_x, axis=1, keepdims=True), (1, 4)) * (y-x_T_y_x)
+    u = np.tile(angle[:, np.newaxis]/np.linalg.norm(y_copy-x_T_y_x, axis=1, keepdims=True), (1, M)) * (y_copy-x_T_y_x)
 
-    u[angle == 0] = np.zeros([1, 4]) 
+    u[angle == 0] = np.zeros([1, M]) 
 
     
     return u
