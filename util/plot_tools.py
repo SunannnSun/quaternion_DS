@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from scipy.spatial.transform import Rotation as R
-from.quat_tools import *
+from .quat_tools import *
 
 
 

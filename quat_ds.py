@@ -51,8 +51,8 @@ class quat_ds:
                 w_pred_att += h_k_i * w_k_i
 
 
-            w_pred_id = parallel_transport(self.q_att, self.q_id, w_pred_att)
-            w_pred_q  = riem_exp(self.q_id.as_quat(), w_pred_id * dt) # multiplied by dt before projecting back to the quaternion space
+            w_pred_id = parallel_transport(self.q_att, self.q_curr, w_pred_att)
+            w_pred_q  = riem_exp(self.q_curr.as_quat(), w_pred_id * dt) # multiplied by dt before projecting back to the quaternion space
             w_pred    = R.from_quat(w_pred_q)
 
             q_next = w_pred * q_test[i]

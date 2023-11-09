@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
@@ -8,38 +9,63 @@ from scipy.spatial.transform import Rotation as R
 """
 
 
-def parallel_transport(x, y, v):
+def _process_x(x):
     """
-    Vectorized operation
+    x can be either
+        - a single R object
+        - a list of R objects
+    """
+
+    if isinstance(x, list):
+        x = list_to_arr(x)
+    elif isinstance(x, R):
+        x = x.as_quat()[np.newaxis, :]
+
+    return x
+
+
+
+def _process_xy(x, y):
+    """
+    Transform both x and y into (N by M) np.ndarray and normalize to ensure unit quaternions
+
+    x and y can be either
+        - 2 single R objects
+        - 1 single R object + 1 list of R objects
+        - 2 lists of R objects
     
-    parallel transport a vector u from space defined by x to a new space defined by y
-
-    @param: x original tangent point, np.array()
-    @param: y new tangent point, np.array
-    @param v vector in tangent space (compatible with both 1-D and 2-D)
-
+    Except when both x and y are single R objects, always expand and cast the single R object to meet the same shape
     """
+    if isinstance(x, R) and isinstance(y, list):
+        N = len(y)
+        x = np.tile(x.as_quat()[np.newaxis, :], (N,1))
+        y = list_to_arr(y)
 
-    log_xy = riem_log(x, y)
-    log_yx = riem_log(y, x)
-    d_xy = unsigned_angle(x, y)
+    elif isinstance(y, R) and isinstance(x, list):
+        N = len(x)
+        y = np.tile(y.as_quat()[np.newaxis, :], (N,1))
+        x = list_to_arr(x)
 
-    if d_xy == 0:
-        return v
+    elif isinstance(x, list) and isinstance(y, list):
+        x = list_to_arr(x)
+        y = list_to_arr(y)
+    
+    elif isinstance(x, R) and isinstance(y, R):
+        x = x.as_quat()[np.newaxis, :]
+        y = y.as_quat()[np.newaxis, :]
 
-    if v.ndim == 2 and v.shape[1]==1: # 2D vector
-        u = v[:, 0] - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
+    elif isinstance(x, np.ndarray) and isinstance(y, np.ndarray):
+        pass
 
-    elif v.ndim == 2 and v.shape[0]>1: # 2D matrix
-        u = v - 1/d_xy**2 * v @ log_xy[:, np.newaxis] * np.tile(log_xy + log_yx, (v.shape[0] ,1) )
+    else:
+        print("Invalid inputs in quaternion operation")
+        sys.exit()
 
-    elif v.ndim == 1: # 1D vector
-        u = v - 1/d_xy**2 * np.dot(log_xy, v) * (log_xy + log_yx)
+    x = x / np.tile(np.linalg.norm(x, axis=1, keepdims=True), (1,4))
+    y = y / np.tile(np.linalg.norm(x, axis=1, keepdims=True), (1,4))
+    
 
-
-
-    return u
-
+    return x,y
 
 
 
@@ -55,29 +81,15 @@ def unsigned_angle(x, y):
     note: "/" divide operator equivalent to np.divide, performing element-wise division
     note:  np.dot, np.linalg.norm(keepdims=False) and the return angle are 1-D array
     """
-    if isinstance(x, R):
-        x = canonical_quat(x.as_quat())
-    if isinstance(y, R):
-        y = canonical_quat(y.as_quat())
+    x, y = _process_xy(x, y)
 
- 
-    if y.ndim == 1:
-        y = y / np.linalg.norm(y)
-    elif y.ndim == 2 and y.shape[1] > 1:
-        y = y / np.linalg.norm(y, axis=1, keepdims=True)
-    else:
-        y = (y / np.linalg.norm(y, axis=0, keepdims=False))[:, 0]
-
-
-    if x.ndim == 2 and x.shape[1] > 1:
-        dotProduct = np.sum(x * y, axis=1)
-    else:
-        dotProduct = np.dot(y, x) 
-
+    dotProduct = np.sum(x * y, axis=1)
 
     angle = np.arccos(np.clip(dotProduct, -1, 1))
 
     return angle
+
+
 
 
 
@@ -91,55 +103,69 @@ def riem_log(x, y):
 
     @note special cases to take care of when x=y and angle(x, y) = pi
     @note IF further normalization needed after adding perturbation?
-    """
-    if isinstance(x, R):
-        x = canonical_quat(x.as_quat())
-    if isinstance(y, R):
-        y = canonical_quat(y.as_quat())
 
-    if x.ndim == 2 and x.shape[-1] > 1:
-        x = x / np.tile(np.linalg.norm(x, axis=1, keepdims=True), (1,4))
-    else:
-        x = x / np.linalg.norm(x)
-
-    if y.ndim == 1:
-        y = y / np.linalg.norm(y)
-    elif y.ndim == 2 and y.shape[1] > 1:
-        y = y / np.linalg.norm(y, axis=1, keepdims=True)
-    else:
-        y = (y / np.linalg.norm(y, axis=0, keepdims=False))[:, 0]
+    - Scenario 1:
+        When projecting q_train wrt q_att:
+            x is a single R object
+            y is a list of R objects
     
+    - Scenario 2:
+        When projecting each w_train wrt each q_train:
+            x is a list of R objects
+            y is a list of R objects
+    
+    - Scenario 3:
+        When parallel_transport each projected w_train from respective q_train to q_att:
+            x is a list of R objects
+            y is a single R object
+
+    - Scenario 4:
+        When simulating forward, projecting q_curr wrt q_att:
+            x is a single R object
+            y is a single R object
+    """
+
+
+    x, y = _process_xy(x, y)
+
     angle = unsigned_angle(x, y) 
 
-    if y.ndim == 1:
-        tanDir = y - np.dot(y, x) * x 
-        if angle == 0:
-            return tanDir
-        elif angle == np.pi:
-            tanDir = y - np.dot(y+0.001, x) * x 
+    y[angle == np.pi] += 0.001
 
-        v = angle * tanDir / np.linalg.norm(tanDir)
+    x_T_y = np.tile(np.sum(x * y, axis=1,keepdims=True), (1,4))
+
+    x_T_y_x = x_T_y * x
+
+    u = np.tile(angle[:, np.newaxis]/np.linalg.norm(x_T_y_x, axis=1, keepdims=True), (1, 4)) * (y-x_T_y_x)
+
+    u[angle == 0] = np.zeros([1, 4]) 
+
     
-
-    elif x.shape[0] == y.shape[0]:
-        y[angle==np.pi] += 0.001
-
-        tanDir = y - np.tile(np.sum(x * y, axis=1,keepdims=True),(1, 4)) * x
-        v = np.tile(angle[:, np.newaxis],(1,4)) * tanDir / np.linalg.norm(tanDir, axis=1, keepdims=True)
-
-        v[angle == 0] = tanDir[angle==0] 
+    return u
 
 
-    elif y.ndim == 2:
-        y[angle==np.pi] += 0.001
-
-        tanDir = y - np.dot(y, x)[:, np.newaxis] * x 
-        v = angle[:, np.newaxis] * tanDir / np.linalg.norm(tanDir, axis=1, keepdims=True)
-
-        v[angle == 0] = tanDir[angle==0] 
+def parallel_transport(x, y, v):
+    """
+    Vectorized operation
     
-    return v
+    parallel transport a vector u from space defined by x to a new space defined by y
 
+    @param: x original tangent point, np.array()
+    @param: y new tangent point, np.array
+    @param v vector in tangent space (compatible with both 1-D and 2-D)
+
+    """
+    v = _process_x(v)
+    log_xy = riem_log(x, y)
+    log_yx = riem_log(y, x)
+    d_xy = unsigned_angle(x, y)
+
+
+    # a = np.sum(log_xy * v, axis=1) 
+    u = v - (log_xy + log_yx) * np.tile(np.sum(log_xy * v, axis=1, keepdims=True) / np.power(d_xy,2)[:, np.newaxis], (1, 4))
+
+
+    return u
 
 
 def riem_exp(x, v):
@@ -160,27 +186,14 @@ def riem_exp(x, v):
     return y
 
 
-def riem_cov(q_list, q_mean):
+def riem_cov(q_mean, q_list):
 
-    q_arr = list_to_arr(q_list)
-    q_mean = canonical_quat(q_mean.as_quat())
 
-    M = 4
-    
+    q_list_mean = riem_log(q_mean, q_list)
+    scatter = q_list_mean.T @ q_list_mean
 
-    scatter = np.zeros((M, M))
-    N = len(q_list)
-    for i in range(N):
-        q_i = q_arr[i, :]
-        log_q = riem_log(q_mean, q_i)
-        # scatter  += log_q[:, np.newaxis] @ log_q[np.newaxis, :]
-        scatter += np.outer(log_q, log_q)
+    cov = scatter/len(q_list)
 
-        # print(np.linalg.eigvals(scatter))
-
-    cov = scatter/N
-
-    # print(np.linalg.eigvals(cov))
 
     return cov
 

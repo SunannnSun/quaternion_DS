@@ -17,7 +17,7 @@ from load_pos_ori import load_clfd_dataset, _angular_velocities
 
 
 
-q_init, q_att, q_train, w_train = traj_generator.generate_traj(K=2, N=40)
+q_init, q_att, q_train, w_train = traj_generator.generate_traj(K=1, N=80)
 
 # q_arr = quat_tools.list_to_arr(q_train)
 # q_flipped = np.zeros((q_arr.shape))

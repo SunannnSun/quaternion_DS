@@ -14,23 +14,22 @@ def optimize_quat_system(q_train, w_train, q_att, postProb):
     :param postProb: posterior probability of each observation, shape (K, N), where K is number of components and N is the number of observations
 
     """
-    q_att       = canonical_quat(q_att.as_quat())
-
-    q_train     = list_to_arr(q_train)
+    
     q_train_att = riem_log(q_att, q_train)
     
     # plot_4d_coord(q_train_att)
     # plot_rot_vec(w_train)
 
-    w_train     = list_to_arr(w_train)
-    
-    w_train_id  = riem_log(q_train[:-1, :], w_train)
-    w_train_att = parallel_transport(q_train[:-1, :], q_att, w_train_id)
+    # w_train     = list_to_arr(w_train)
+
+    w_train_body  = riem_log(q_train[:-1], w_train)
+    w_train_att = parallel_transport(q_train[:-1], q_att, w_train_body)
     
     # plot_4d_coord(w_train_att)
 
     K, _ = postProb.shape
-    N, M = q_train.shape
+    N = len(q_train)
+    M = 4
 
 
     max_norm = 0.5

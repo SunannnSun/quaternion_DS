@@ -13,7 +13,7 @@ def generate_traj(K=2, N=40, dt=0.1, **kwargs):
     """
 
     rot_vel  = np.pi/6
-    rng_seed =  np.random.RandomState(seed=1)
+    rng_seed =  np.random.RandomState(seed=2)
     w_list   = [R.random(random_state=rng_seed).as_rotvec() for k in range(K)]
     w_list   = [R.from_rotvec(rot_vel * rot_vec / np.linalg.norm(rot_vec)) for rot_vec in w_list]
     # w_list = [R.from_rotvec(np.array([rot_vel, 0, 0]))]

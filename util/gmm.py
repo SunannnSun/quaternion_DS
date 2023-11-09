@@ -7,13 +7,14 @@ from sklearn.mixture import BayesianGaussianMixture
 from .quat_tools import *
 
 class gmm:
-    def __init__(self, q_att, q_list):
+    def __init__(self, q_att, q_train):
         
-        self.q_list = q_list
+        self.q_att   = q_att
+        self.q_train = q_train
 
-        q_list_q   = list_to_arr(q_list)
-        q_att_q = canonical_quat(q_att.as_quat())
-        self.q_list_att = riem_log(q_att_q, q_list_q)
+        self.q_train_att = riem_log(q_att, q_train)
+        self.N = len(q_train)
+        self.M = 4
 
         # self.q_att   = q_att
         # self.q_att_q = canonical_quat(q_att.as_quat())
@@ -28,9 +29,9 @@ class gmm:
         Fill in the actual clustering algorithm and return the result assignment_arr
         """
         if len(args) == 1:
-            assignment_arr = args[0]
+            assignment_arr = args[0] # pseudo clustering
         elif len(args) == 0:
-            assignment_arr = BayesianGaussianMixture(n_components=5, random_state=2).fit_predict(self.q_list_att)
+            assignment_arr = BayesianGaussianMixture(n_components=5, random_state=2).fit_predict(self.q_train_att)
 
         rearrange_list = []
         for idx, entry in enumerate(assignment_arr):
@@ -43,12 +44,13 @@ class gmm:
                 assignment_arr[idx] = rearrange_list.index(entry)   
 
         self.assignment_arr = assignment_arr 
-        self.return_norma_class(self.q_list, self.assignment_arr)
+        self.K = int(assignment_arr.max()+1)
+        self._return_norma_class()
 
         return self.assignment_arr
 
 
-    def return_norma_class(self, q_list, *args_):
+    def _return_norma_class(self):
         """
         Return normal_class: 
             Assuming one distribution if only q_list is given;
@@ -60,120 +62,37 @@ class gmm:
         """
 
 
-        self.N = len(q_list)
-        M = 4
 
-        if len(args_) == 1:
-            assignment_arr = args_[0]
-        else:
-            assignment_arr = np.zeros((self.N, ), dtype=int)
+        Prior   = [0] * self.K
+        Mu      = [R.identity()] * self.K
+        Sigma   = [np.zeros((self.M, self.M), dtype=np.float32)] * self.K
 
-        self.K = int(assignment_arr.max()+1)
-
-        Prior   = np.zeros((self.K, ))
-        Mu      = np.zeros((self.K, M), dtype=np.float32)
-        Sigma   = np.zeros((self.K, M, M), dtype=np.float32)
-
-        q_normal_list = []  # easier for list comprehension later
+        q_normal_list = [] 
 
         for k in range(self.K):
-            q_k = [q for index, q in enumerate(q_list) if assignment_arr[index]==k] 
-            r_k = R.from_quat([canonical_quat(q.as_quat()) for q in q_k])
+            q_k      = [q for index, q in enumerate(self.q_train) if self.assignment_arr[index]==k] 
+            r_k      = R.from_quat([canonical_quat(q.as_quat()) for q in q_k])
             q_k_mean = r_k.mean()
         
 
-            Prior[k]       = len(q_k)/self.N
-            Mu[k, :]        = canonical_quat(q_k_mean.as_quat())
-            Sigma[k, :, :]  = riem_cov(q_k, q_k_mean) + 10**(-6) * np.eye(4)
+            Prior[k]  = len(q_k)/self.N
+            Mu[k]     = q_k_mean
+            Sigma[k]  = riem_cov(q_k_mean, q_k) + 10**(-6) * np.eye(4)
 
-            print(np.linalg.eigvals(Sigma[k, :, :]))
 
             q_normal_list.append(
                 {
                     "prior" : Prior[k],
-                    "mu"    : Mu[k, :],
-                    "rv"    : multivariate_normal(np.zeros((M, )), Sigma[k, :, :], allow_singular=True)
+                    "mu"    : Mu[k],
+                    "rv"    : multivariate_normal(np.zeros((self.M, )), Sigma[k], allow_singular=True)
                 }
             )
 
         self.Prior = Prior
         self.q_normal_list = q_normal_list
-        self.Sigma = Sigma
 
 
-        return q_normal_list
     
-
-
-    def prob(self, q_list):
-
-        """
-        @param q_list could be one quaternion or a list of quaternion
-
-        @param log_q_k represents the logarithmic map of q_list w.r.t. mu_k
-        @param k (optional) could be the number of specfic component
-        """
-
-        if isinstance(q_list, np.ndarray):
-            prob = np.zeros((self.K, 1))
-
-        else:
-            prob = np.zeros((self.K, self.N))
-
-        for k in range(self.K):
-            
-            _, mu_k, normal_k = tuple(self.q_normal_list[k].values())
-
-            if isinstance(q_list, np.ndarray):
-                log_q_k = riem_log(mu_k, q_list).astype(np.float16)
-
-            else:
-                # log_q_k = riem_log(mu_k, list_to_arr(q_list))
-                log_q_k = [riem_log(mu_k, canonical_quat(q.as_quat())) for q in q_list]
-
-            prob[k, :] = normal_k.pdf(log_q_k)
-            
-            # a = normal_k.logpdf(log_q_k)
-            # Mean = np.zeros((4, ))
-            # Cov = self.Sigma[k, :, :].astype(np.float16)
-            # aa = multivariate_normal.logpdf(log_q_k, mean=Mean, cov= Cov, allow_singular=True)
-            # aaa= multivariate_normal.logpdf(log_q_k, mean=Mean, cov= normal_k.cov, allow_singular=True)
-
-
-        return prob
-
-            
-
-
-    def postProb(self, q_list):
-
-        """
-        vectorized operation
-
-        @ q_list: q_list could either be a list of roataion object, or a single quaternion array
-
-        @param postProb is a K by N array contains the posterior probability of each q w.r.t each k_th component
-
-        """
-        if isinstance(q_list, np.ndarray):
-            Prior = self.Prior
-            prob  = self.prob(q_list)
-
-            postProb     = Prior[:, np.newaxis] * prob
-            postProb_sum = np.sum(postProb, axis=0, keepdims=True)
-            postProb     = np.divide(postProb, np.tile(postProb_sum, (self.K, 1)))
-
-        
-        else:
-            Prior = self.Prior
-            prob  = self.prob(q_list)
-
-            postProb     = np.tile(Prior[:, np.newaxis], (1, self.N)) * prob
-            postProb_sum = np.sum(postProb, axis=0, keepdims=True)
-            postProb     = np.divide(postProb, np.tile(postProb_sum, (self.K, 1)))
-
-
-        return postProb
 
 
 
@@ -183,24 +102,22 @@ class gmm:
         vectorized operation
         """
 
-        K = self.K
 
-        if isinstance(q_list, np.ndarray):
-            logProb = np.zeros((K, 1))
+        if isinstance(q_list, R):
+            logProb = np.zeros((self.K, 1))
+        elif isinstance(q_list, list):
+            logProb = np.zeros((self.K, len(q_list)))
         else:
-            N = len(q_list)
-            logProb = np.zeros((K, N))
+            print("Invalid q_list type")
+            sys.exit()
 
-        for k in range(K):
-            
+
+        for k in range(self.K):
             _, mu_k, normal_k = tuple(self.q_normal_list[k].values())
 
-            if isinstance(q_list, np.ndarray):
-                log_q_k = riem_log(mu_k, q_list)
-            else:
-                log_q_k = [riem_log(mu_k, canonical_quat(q.as_quat())) for q in q_list]
+            q_list_k = riem_log(mu_k, q_list)
 
-            logProb[k, :] = normal_k.logpdf(log_q_k)
+            logProb[k, :] = normal_k.logpdf(q_list_k)
         
 
         return logProb
@@ -213,51 +130,16 @@ class gmm:
         vectorized operation
         """
 
-        if isinstance(q_list, np.ndarray):
-            logPrior = np.log(self.Prior)
-            logProb  = self.logProb(q_list)
+        logPrior = np.log(self.Prior)
+        logProb  = self.logProb(q_list)
 
-            postLogProb     = logPrior[:, np.newaxis] + logProb
+        postLogProb  = np.tile(logPrior[:, np.newaxis], (1, len(q_list))) + logProb
 
-            maxPostLogProb = np.max(postLogProb)
-            expProb =  np.exp(postLogProb - maxPostLogProb)
-            postProb = expProb / np.sum(expProb)
-
-        
-        else:
-            logPrior = np.log(self.Prior)
-            logProb  = self.logProb(q_list)
-
-            postLogProb  = np.tile(logPrior[:, np.newaxis], (1, len(q_list))) + logProb
-
-            maxPostLogProb = np.max(postLogProb, axis=0, keepdims=True)
-            expProb = np.exp(postLogProb - np.tile(maxPostLogProb, (self.K, 1)))
-            postProb = expProb / np.sum(expProb, axis = 0, keepdims=True)
+        maxPostLogProb = np.max(postLogProb, axis=0, keepdims=True)
+        expProb = np.exp(postLogProb - np.tile(maxPostLogProb, (self.K, 1)))
+        postProb = expProb / np.sum(expProb, axis = 0, keepdims=True)
 
 
         return postProb
-
-
-
-
-
-        
-
-
-
-
-
-    
-
-
-    
-
-
-
-
-        
-    
-
-
 
 
