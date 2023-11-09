@@ -22,6 +22,7 @@ still identity and representing zero rotation, the projected angular velocity is
 ### Update
 11/9 
 - deal with double cover of quaternion
+- four tests in test folder
 
 
 11/7

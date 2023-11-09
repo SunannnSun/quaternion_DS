@@ -107,7 +107,7 @@ def animate_rotated_axes(R_list, scale=1):
 
 
 
-def plot_quat(q_list):
+def plot_quat(q_list, **argv):
 
     q_list_q = list_to_arr(q_list)
 
@@ -124,6 +124,8 @@ def plot_quat(q_list):
         ax.plot(np.arange(N), q_list_q[:, k], color=colors[k], label = label_list[k])
 
     ax.legend()
+    if "title" in argv:
+        ax.set_title(argv["title"])
 
     fig, axs = plt.subplots(4, 1, figsize=(12, 8))
 
@@ -132,7 +134,9 @@ def plot_quat(q_list):
     for k in range(4):
         axs[k].plot(np.arange(N), q_list_q[:, k], color=colors[k], label = label_list[k])
         axs[k].legend(loc="upper left")
-
+   
+    if "title" in argv:
+            axs[0].set_title(argv["title"])
     # plt.show()
 
 

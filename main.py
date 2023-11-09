@@ -13,11 +13,11 @@ from scipy.spatial.transform import Rotation as R
 ####### GENERATE RANDOM TRAJECTORY ########
 """
 from load_pos_ori import load_clfd_dataset, _angular_velocities
-# q_init, q_att, q_train, w_train = load_clfd_dataset(task_id=2, num_traj=1, sub_sample=3)
+q_init, q_att, q_train, w_train = load_clfd_dataset(task_id=2, num_traj=1, sub_sample=10)
 
 
 
-q_init, q_att, q_train, w_train = traj_generator.generate_traj(K=1, N=80)
+# q_init, q_att, q_train, w_train = traj_generator.generate_traj(K=1, N=80)
 
 # q_arr = quat_tools.list_to_arr(q_train)
 # q_flipped = np.zeros((q_arr.shape))
@@ -45,9 +45,9 @@ q_init, q_att, q_train, w_train = traj_generator.generate_traj(K=1, N=80)
 """
 ############ PERFORM QUAT-DS ############
 """
-quat_ds = quat_ds_class(q_train, w_train, q_att)
-quat_ds.begin()
-q_test = quat_ds.sim(q_init)
+# quat_ds = quat_ds_class(q_train, w_train, q_att)
+# quat_ds.begin()
+# q_test = quat_ds.sim(q_init)
 
 
 """
