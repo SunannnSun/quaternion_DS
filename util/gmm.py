@@ -24,10 +24,11 @@ class gmm:
 
 
 
-    def begin(self, *args): #
+    def begin(self, *args, **argv): #
         """
         Fill in the actual clustering algorithm and return the result assignment_arr
         """
+
         if len(args) == 1:
             assignment_arr = args[0] # pseudo clustering
         elif len(args) == 0:
@@ -133,7 +134,10 @@ class gmm:
         logPrior = np.log(self.Prior)
         logProb  = self.logProb(q_list)
 
-        postLogProb  = np.tile(logPrior[:, np.newaxis], (1, len(q_list))) + logProb
+        if isinstance(q_list, R):
+            postLogProb  = logPrior[:, np.newaxis] + logProb
+        elif isinstance(q_list, list):
+            postLogProb  = np.tile(logPrior[:, np.newaxis], (1, len(q_list))) + logProb
 
         maxPostLogProb = np.max(postLogProb, axis=0, keepdims=True)
         expProb = np.exp(postLogProb - np.tile(maxPostLogProb, (self.K, 1)))

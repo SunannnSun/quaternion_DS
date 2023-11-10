@@ -38,24 +38,24 @@ class quat_ds:
         q_test = [q_init]
 
         for i in range(self.N+100):
-            q_curr = canonical_quat(q_test[i].as_quat())
+            q_curr = q_test[i]
             q_curr_att = riem_log(self.q_att, q_curr)
 
-            h_k = self.gmm.postLogProb(q_curr)
+            h_k = self.gmm.postLogProb(q_curr)  # (K by N)
 
                       
             w_pred_att = np.zeros((4, 1))
             for k in range(self.K):
                 h_k_i =  h_k[k, 0]
-                w_k_i =  self.A[k] @ q_curr_att[:, np.newaxis]
+                w_k_i =  self.A[k] @ q_curr_att.reshape(-1, 1)
                 w_pred_att += h_k_i * w_k_i
 
 
-            w_pred_id = parallel_transport(self.q_att, self.q_curr, w_pred_att)
-            w_pred_q  = riem_exp(self.q_curr.as_quat(), w_pred_id * dt) # multiplied by dt before projecting back to the quaternion space
+            w_pred_id = parallel_transport(self.q_att, R.identity(), w_pred_att)
+            w_pred_q  = riem_exp(R.identity(), w_pred_id * dt) 
             w_pred    = R.from_quat(w_pred_q)
 
-            q_next = w_pred * q_test[i]
+            q_next = w_pred * q_test[i] # rotate about body frame
             q_test.append(q_next)
     
         return q_test

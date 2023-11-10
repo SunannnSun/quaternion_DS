@@ -53,8 +53,14 @@ def _process_xy(x, y):
         y = list_to_arr(y)
     
     elif isinstance(x, R) and isinstance(y, R):
-        x = x.as_quat()[np.newaxis, :]
-        y = y.as_quat()[np.newaxis, :]
+        if x.as_quat().ndim == 1:
+            x = x.as_quat()[np.newaxis, :]
+        else:
+            x = x.as_quat()
+        if y.as_quat().ndim == 1:
+            y = y.as_quat()[np.newaxis, :]
+        else:
+            y = y.as_quat()
 
     elif isinstance(x, np.ndarray) and isinstance(y, np.ndarray):
         if x.ndim == 1 and y.ndim == 1:
@@ -178,12 +184,11 @@ def parallel_transport(x, y, v):
 
 def riem_exp(x, v):
     """
-    x is the point of tangency
-
-    @note x is always the q_att as the point of tangency, hence 1-D
-    @note v is 2-D array of single vector
-
+    The only useage of riem_exp so far is during simulation where x is a rotation object, v is a numpy array
     """
+
+    x = _process_x(x)
+
     if v.ndim == 2:
         v = v[:, 0]
 

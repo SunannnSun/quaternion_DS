@@ -16,17 +16,25 @@ def optimize_quat_system(q_train, w_train, q_att, postProb):
     """
     
     q_train_att = riem_log(q_att, q_train)
-    
+
+    w_train_global  = [q_train[i]*w_train[i]*q_train[i].inv() for i in range(len(w_train))]
+
+    w_train_global_wrt_id  = riem_log(R.identity().inv(), w_train_global)
+    # plot_4d_coord(w_train_global_wrt_id, title='w_train_global_wrt_id')
+
+    w_train_global_wrt_att = parallel_transport(R.identity().inv(), q_att, w_train_global_wrt_id)
+    # plot_4d_coord(w_train_global_wrt_att, title='w_train_global_wrt_att')
+
+
+
     # plot_4d_coord(q_train_att)
     # plot_rot_vec(w_train)
-
     # w_train     = list_to_arr(w_train)
-
-    w_train_body  = riem_log(q_train[:-1], w_train)
-    w_train_att = parallel_transport(q_train[:-1], q_att, w_train_body)
-    
+    # w_train_body  = riem_log(q_train[:-1], w_train)
+    # w_train_att = parallel_transport(q_train[:-1], q_att, w_train_body)
     # plot_4d_coord(w_train_att)
 
+    
     K, _ = postProb.shape
     N = len(q_train)
     M = 4
@@ -54,8 +62,8 @@ def optimize_quat_system(q_train, w_train, q_att, postProb):
 
     
 
-    # objective = cp.sum(cp.norm2(w_pred_att - w_curr_att, axis=0))
-    objective = cp.norm(w_pred_att-w_train_att, 'fro')
+    # objective = cp.sum(cp.norm2(w_pred_att - w_train_global_wrt_att, axis=0))
+    objective = cp.norm(w_pred_att-w_train_global_wrt_att, 'fro')
 
 
     problem = cp.Problem(cp.Minimize(objective), constraints)
