@@ -28,7 +28,7 @@ Remark:
 
 # Produce a trajectory and extract w_train in local frame
 rng_seed =  np.random.RandomState(seed=2)
-q_init, q_att, q_train, w_train_local = traj_generator.generate_traj(K=2, N=60, q_init=R.random())
+q_init, q_att, q_train, w_train_local, dt= traj_generator.generate_traj(K=2, N=60, q_init=R.random())
 
 w_train_local_arr  = quat_tools.list_to_arr(w_train_local)
 # plot_tools.plot_4d_coord(w_train_local_arr, title='w_train_local in quaternion')
@@ -57,7 +57,7 @@ for i in range(N-1):
 q_train_arr         = quat_tools.list_to_arr(q_train)
 q_train_global_arr  = quat_tools.list_to_arr(q_train_global)
 
-# plot_tools.plot_quat(q_train)
+plot_tools.plot_quat(q_train)
 # plot_tools.plot_quat(q_train_global)
 
 
@@ -68,13 +68,13 @@ plot_tools.plot_4d_coord(w_train_local_wrt_body, title="w_train_local_wrt_body")
 
 
 # Parallel transport the projected w_train_local from body to attractor
-w_train_local_wrt_att  =  quat_tools.parallel_transport(q_train[:-1], q_att, w_train_local_wrt_body)
+# w_train_local_wrt_att  =  quat_tools.parallel_transport(q_train[:-1], q_att, w_train_local_wrt_body)
 # plot_tools.plot_4d_coord(w_train_local_wrt_att, title='w_train_local_wrt_att')
 
 
 # Project w_train_global wrt identity
-w_train_global_wrt_id  = quat_tools.riem_log(R.identity().inv(), w_train_global)
-# plot_tools.plot_4d_coord(w_train_global_wrt_id, title='w_train_global_wrt_id')
+w_train_global_wrt_id  = quat_tools.riem_log(R.identity(), w_train_global)
+plot_tools.plot_4d_coord(w_train_global_wrt_id, title='w_train_global_wrt_id')
 
 
 # Parallel transport the projected w_train_global from identity to attractor

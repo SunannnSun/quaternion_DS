@@ -108,7 +108,7 @@ def riem_log(x, y):
     """
     Vectorized operation
 
-    @param x is the point of tangency and is always a 1D array
+    @param x is the point of tangency
     @param y is either a 1D array or 2D array of N by M
 
 
@@ -164,9 +164,9 @@ def parallel_transport(x, y, v):
     
     parallel transport a vector u from space defined by x to a new space defined by y
 
-    @param: x original tangent point, np.array()
-    @param: y new tangent point, np.array
-    @param v vector in tangent space (compatible with both 1-D and 2-D)
+    @param: x original tangent point
+    @param: y new tangent point
+    @param v vector in tangent space (compatible with both 1-D and 2-D NxM)
 
     """
     v = _process_x(v)

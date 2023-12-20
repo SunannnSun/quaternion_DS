@@ -127,6 +127,7 @@ def plot_quat(q_list, **argv):
     if "title" in argv:
         ax.set_title(argv["title"])
 
+    """
     fig, axs = plt.subplots(4, 1, figsize=(12, 8))
 
     N = q_list_q.shape[0]
@@ -137,6 +138,7 @@ def plot_quat(q_list, **argv):
    
     if "title" in argv:
             axs[0].set_title(argv["title"])
+    """
     # plt.show()
 
 
@@ -146,7 +148,7 @@ def plot_4d_coord(q_list, **argv):
     ax = fig.add_subplot()
     ax.figure.set_size_inches(12, 6)
 
-    label_list = ['w', 'x', 'y', 'z']
+    label_list = ['x', 'y', 'z', 'w']
     N = q_list.shape[0]
 
 
@@ -161,13 +163,15 @@ def plot_4d_coord(q_list, **argv):
 
 
 
-def plot_rot_vec(w_list):
+def plot_rot_vec(w_list, **argv):
     
     N = len(w_list)
     w_arr = np.zeros((N, 3))
 
     for i in range(N):
-        w_arr[i, :] = w_list[i].as_euler('xyz')
+        # w_arr[i, :] = w_list[i].as_euler('xyz')
+        w_arr[i, :] = w_list[i].as_rotvec()
+
 
     fig = plt.figure()
     ax = fig.add_subplot()
@@ -180,6 +184,10 @@ def plot_rot_vec(w_list):
     for k in range(3):
         ax.plot(np.arange(N), w_arr[:, k], color=colors[k], label = label_list[k])
 
+    
+    if "title" in argv:
+        ax.set_title(argv["title"])
+        
     ax.legend()
 
 

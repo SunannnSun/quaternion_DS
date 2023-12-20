@@ -32,7 +32,7 @@ class gmm:
         if len(args) == 1:
             assignment_arr = args[0] # pseudo clustering
         elif len(args) == 0:
-            assignment_arr = BayesianGaussianMixture(n_components=5, random_state=2).fit_predict(self.q_train_att)
+            assignment_arr = BayesianGaussianMixture(n_components=1, random_state=2).fit_predict(self.q_train_att)
 
         rearrange_list = []
         for idx, entry in enumerate(assignment_arr):
