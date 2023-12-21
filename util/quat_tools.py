@@ -189,8 +189,8 @@ def riem_exp(x, v):
 
     x = _process_x(x)
 
-    if v.ndim == 2:
-        v = v[:, 0]
+    # if v.ndim == 2:
+    #     v = v[:, 0]
 
     v_norm = np.linalg.norm(v)
 

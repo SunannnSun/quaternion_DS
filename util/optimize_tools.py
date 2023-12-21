@@ -6,7 +6,7 @@ from util.plot_tools import *
 
 
 
-def optimize_quat_system(q_train, w_train, t_train, q_att, postProb):
+def optimize_quat_system(q_train, w_train, q_att, postProb):
     """
     :param q_train:  list of Rotation objects representing orientation, should be length N
     :param w_train:  list of Rotation objects representing angular velocity, should be length N-1
@@ -26,13 +26,13 @@ def optimize_quat_system(q_train, w_train, t_train, q_att, postProb):
     # plot_4d_coord(w_train_global_wrt_att, title='w_train_global_wrt_att')
 
 
-    d_train = [q_train[0]] * len(q_train)
+    # d_train = [q_train[0]] * len(q_train)
 
-    for i in range(len(w_train)):
+    # for i in range(len(w_train)):
 
-        dq = w_train[i].as_rotvec() * (t_train[i+1] - t_train[i])
+    #     dq = w_train[i].as_rotvec() * (t_train[i+1] - t_train[i])
 
-        d_train[i+1]  = q_train[i] * R.from_rotvec(dq)
+    #     d_train[i+1]  = q_train[i] * R.from_rotvec(dq)
 
     # plot_quat(d_train, title='displacement in quaternion')
     # plot_quat(q_train, title='displacement in quaternion')
@@ -42,7 +42,7 @@ def optimize_quat_system(q_train, w_train, t_train, q_att, postProb):
     # d_train_att = riem_log(q_att, d_train)
     # plot_4d_coord(d_train_att, title='d_train_att')
 
-    d_train_body = riem_log(q_train[:-1], d_train[1:])          # project each displacement wrt their corresponding orientation
+    d_train_body = riem_log(q_train[:-1], q_train[1:])          # project each displacement wrt their corresponding orientation
     # plot_4d_coord(d_train_body, title='d_train_body')
 
 

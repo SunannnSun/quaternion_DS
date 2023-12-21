@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation as R
 ####### GENERATE RANDOM TRAJECTORY ########
 """
 
-q_init, q_att, q_train, w_train, dt = load_tools.load_clfd_dataset(task_id=1, num_traj=1, sub_sample=10)
+# q_init, q_att, q_train, w_train, dt = load_tools.load_clfd_dataset(task_id=1, num_traj=1, sub_sample=10)
 
 
 # q_init, q_att, q_train, w_train, t_train, dt = traj_generator.generate_traj(q_init=R.identity(), K=1, N=250, dt=0.1)
@@ -89,8 +89,11 @@ k2 = 3
 # plt.show()
 
 
+q_init, q_att, q_train, w_train, dt, index_list = load_tools.load_clfd_dataset(task_id=2, num_traj=2, sub_sample=3)
 
-q_init, q_att, q_train, w_train, t_train, dt = traj_generator.generate_traj(q_init=R.identity(), K=1, N=40, dt=0.1)
+# q_init, q_att, q_train, w_train, t_train, dt = traj_generator.generate_traj(q_init=R.identity(), K=4, N=40, dt=0.1)
+
+# plot_tools.plot_demo(q_train, index_list=index_list)
 
 q_train_att = quat_tools.riem_log(q_att, q_train)
 
@@ -138,22 +141,24 @@ q_rec = [q_train[0]] * len(q_train)
 
 for i in range(len(w_train)):
 
-    dq = w_train[i].as_rotvec() * (t_train[i+1] - t_train[i])
-
+    # dq = w_train[i].as_rotvec() * (t_train[i+1] - t_train[i])
+    dq = w_train[i].as_rotvec() * dt
 
     q_rec[i+1] = q_rec[i] * R.from_rotvec(dq)
 
+# plot_tools.plot_quat(q_train, title= "Original Quaternion")
 
-plot_tools.plot_quat(q_rec, title= "Original Quaternion")
-
-
-
-quat_ds = quat_ds_class(q_train, w_train, t_train, q_att)
-quat_ds.begin()
-q_test = quat_ds.sim(q_init, dt=0.1)
+# plot_tools.plot_quat(q_rec, title= "Original Quaternion")
 
 
-plot_tools.plot_quat(q_test, title= "Reconstructed Quaternion")
+# quat_ds = quat_ds_class(q_train, w_train, q_att)
+# quat_ds.begin()
+# q_test = quat_ds.sim(q_init, dt=0.1)
+
+
+
+# plot_tools.plot_quat(q_test, title="Reconstructed Quaternion")
+
 
 plt.show()
 

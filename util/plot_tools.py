@@ -103,17 +103,65 @@ def animate_rotated_axes(R_list, scale=1):
 
 
 
+def plot_demo(q_list, *args, **argv):
+    """
+    Plot scatter quaternions from demonstrations.
+    """
+    if "ax" not in argv:
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        ax.figure.set_size_inches(12, 6)
+    else:
+        ax = argv["ax"]
 
+    if "index_list" in argv:
+        index_list = argv["index_list"] 
+    else:
+        index_list = np.arange(len(q_list))
+
+    q_list_q = list_to_arr(q_list)
+
+    label_list = ['x', 'y', 'z', 'w']
+    N = q_list_q.shape[0]
+
+    colors = ['red', 'blue', 'lime', 'magenta']
+
+    for k in range(4):
+        ax.scatter(index_list, q_list_q[:, k], s= 2, color=colors[k], label = label_list[k])
+
+    ax.legend()
+    if "title" in argv:
+        ax.set_title(argv["title"])
+
+    """
+    fig, axs = plt.subplots(4, 1, figsize=(12, 8))
+
+    N = q_list_q.shape[0]
+    colors = ['red', 'blue', 'lime', 'magenta']
+    for k in range(4):
+        axs[k].plot(np.arange(N), q_list_q[:, k], color=colors[k], label = label_list[k])
+        axs[k].legend(loc="upper left")
+   
+    if "title" in argv:
+            axs[0].set_title(argv["title"])
+    """
+    # plt.show()
+
+    return ax
 
 
 
 def plot_quat(q_list, **argv):
 
+    if "ax" not in argv:
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        ax.figure.set_size_inches(12, 6)
+    else:
+        ax = argv["ax"]
+
     q_list_q = list_to_arr(q_list)
 
-    fig = plt.figure()
-    ax = fig.add_subplot()
-    ax.figure.set_size_inches(12, 6)
 
     label_list = ['x', 'y', 'z', 'w']
     N = q_list_q.shape[0]
@@ -141,6 +189,8 @@ def plot_quat(q_list, **argv):
     """
     # plt.show()
 
+    return ax
+
 
 def plot_4d_coord(q_list, **argv):
 
@@ -160,6 +210,8 @@ def plot_4d_coord(q_list, **argv):
         ax.set_title(argv["title"])
 
     ax.legend()
+
+    return ax
 
 
 
@@ -189,6 +241,8 @@ def plot_rot_vec(w_list, **argv):
         ax.set_title(argv["title"])
         
     ax.legend()
+
+    return ax
 
 
 
