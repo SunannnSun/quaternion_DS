@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from scipy.spatial.transform import Rotation as R
 from .quat_tools import *
+import random
 
 
 
@@ -54,10 +55,12 @@ def plot_rotated_axes_sequence(q_list, N=3):
 
 
 
-def animate_rotated_axes(R_list, scale=1):
+def animate_rotated_axes(R_list, scale=1, **argv):
     """
     List of Rotation object
     """
+
+
 
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d", proj_type="ortho")
@@ -73,15 +76,30 @@ def animate_rotated_axes(R_list, scale=1):
 
     colors = ("#FF6666", "#005533", "#1199EE")  # Colorblind-safe RGB
     lines = [ax.plot([], [], [], c=c)[0] for c in colors]
+    
+    if "att" in argv:
+        lines_att = [ax.plot([], [], [], c=c)[0] for c in colors]
 
 
     def _init():
         for line in lines:
             line.set_data_3d([], [], [])
+        
+        if "att" in argv:
+            for line in lines_att:
+                line.set_data_3d([], [], [])
 
 
     def _animate(i):
         r = R_list[i]
+
+        if "att" in argv:
+            att = argv["att"]
+            for axis, (line, c) in enumerate(zip(lines_att, colors)):
+                line_ = np.zeros((2, 3))
+                line_[1, axis] = scale
+                line_rot_ = att.apply(line_)
+                line.set_data_3d([line_rot_[0, 0], line_rot_[1, 0]], [line_rot_[0, 1], line_rot_[1, 1]], [line_rot_[0, 2], line_rot_[1, 2]])
 
         for axis, (line, c) in enumerate(zip(lines, colors)):
             line_ = np.zeros((2, 3))
@@ -100,6 +118,29 @@ def animate_rotated_axes(R_list, scale=1):
     
     plt.tight_layout()
     plt.show()
+
+
+def plot_gmm(q_list, index_list, label):
+
+    N = index_list[-1] + 1
+
+    colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
+    "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
+
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.figure.set_size_inches(12, 6)
+
+    color_mapping = np.take(colors, label)
+
+    q_list_q = list_to_arr(q_list)
+
+
+    for k in range(4):
+        ax.scatter(index_list, q_list_q[:, k], s=2, c=color_mapping)
+
+    ax.set_title("GMM results")
+    pass
 
 
 

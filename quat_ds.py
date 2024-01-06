@@ -9,17 +9,20 @@ from util.gmm import gmm as gmm_class
 
 
 class quat_ds:
-    def __init__(self, q_train, w_train, q_att) -> None:
+    def __init__(self, q_train, w_train, q_att, **argv) -> None:
         self.q_att   = q_att
         self.q_train = q_train
         self.w_train = w_train
         # self.t_train = t_train
 
         self.N = len(q_train)
+
+        if "index_list" in argv:
+            self.index_list = argv["index_list"]
         
     
     def _cluster(self):
-        gmm = gmm_class(self.q_att, self.q_train)
+        gmm = gmm_class(self.q_att, self.q_train, index_list = self.index_list)
         label = gmm.begin()
         self.postProb = gmm.postLogProb(self.q_train)
         self.gmm = gmm
@@ -35,8 +38,7 @@ class quat_ds:
 
 
     def sim(self, q_init, dt=0.1):
-        
-        N_tot = self.N + 0
+        N_tot = self.N + 80
         q_test = [q_init]
 
         # w_test = np.zeros((N_tot, 4))
@@ -59,6 +61,10 @@ class quat_ds:
 
             d_pred_body = parallel_transport(self.q_att, q_curr, d_pred_att.T)
             d_pred_q    = riem_exp(q_curr, d_pred_body) 
+
+
+            # d_pred_q    = riem_exp(self.q_att, d_pred_att.T) 
+
             d_pred      = R.from_quat(d_pred_q.reshape(4,))
 
             # q_next = w_pred * q_test[i] # rotate about body frame

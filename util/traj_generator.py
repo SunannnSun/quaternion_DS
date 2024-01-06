@@ -20,7 +20,7 @@ def generate_traj(K=2, N=40, dt=0.1, **kwargs):
 
 
     q_train = [R.identity()] * (N * K)
-    w_train = [R.identity()] * (N * K -1)
+    w_train = [R.identity()] * (N * K)
     t_train = [0] * (N * K)
 
 
@@ -33,15 +33,24 @@ def generate_traj(K=2, N=40, dt=0.1, **kwargs):
     q_train[0] = q_init
     for i in range (N * K -1):
         k = i // N
+        # """
         if (k != K-1):
             w_train[i] = w_list[k]
         else:
-            w_train[i] = R.from_rotvec(w_list[k].as_rotvec() * (1 - i/(N*K)))         # Decaying angular velocity
-            # w_train[i] = w_list[k]                                                      # Constant angular velocity
+            w_train[i] = R.from_rotvec(w_list[k].as_rotvec() * (1 - i/(N*K)))           # Decaying angular velocity
+            # w_train[i] = w_list[k]                                                    # Constant angular velocity
+        # """                                          
         q_train[i+1] =   q_train[i] * R.from_rotvec(w_train[i].as_rotvec() * dt)        # Rotate wrt the body frame
 
         t_train[i+1] = (i+1) * dt
     q_att = q_train[-1]
 
+    # l=0
+    for l in range(K):
+        w_train[l*N: (l+1)*N-1] = q_train[l*N+1: (l+1)*N]
+        w_train[(l+1)*N-1]      =  w_train[(l+1)*N-2]
 
-    return q_init, q_att, q_train, w_train, t_train, dt
+    index_list = [i for i in range(N*K)]
+
+
+    return q_init, q_att, q_train, w_train, t_train, dt, index_list

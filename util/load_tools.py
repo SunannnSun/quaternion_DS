@@ -5,6 +5,9 @@ from scipy.spatial.transform import Rotation as R
 from scipy.signal import savgol_filter
 
 from util import plot_tools, optimize_tools, quat_tools
+from util.gmm import gmm as gmm_class
+from util.quat_tools import *
+from util.plot_tools import *
 
 
 
@@ -32,7 +35,7 @@ def _average_traj(q_list, num_traj, num_per_traj, index_list):
         q_shifted[l*N: (l+1)*N] = [q_diff * q for q in q_list[l*N: (l+1)*N]]
 
     # ax = plot_tools.plot_demo(q_list, index_list=index_list, title="unshifted demonstration")
-    ax = plot_tools.plot_demo(q_shifted, index_list=index_list, title="shifted demonstration")
+    # ax = plot_tools.plot_demo(q_shifted, index_list=index_list, title="shifted demonstration")
 
     return q_shifted
 
@@ -96,7 +99,7 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
 
 
     q_train = [R.identity()] *  N_tot
-    w_train = [R.identity()] * (N_tot-1)
+    w_train = [R.identity()] *  N_tot 
     index_list = [0] *  N_tot
     
     for l in range(num_traj):
@@ -126,12 +129,63 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
             w_train[l*N: (l+1)*N]   = [R.from_rotvec(rotvec_l[j, :]) for j in range(rotvec_l.shape[0])]
         """
 
+        w_train[l*N: (l+1)*N-1] = q_train[l*N+1: (l+1)*N]
+        w_train[(l+1)*N-1]      =  w_train[(l+1)*N-2]
     q_train = _average_traj(q_train, num_traj, N, index_list)
     
 
     q_init = q_train[0]
     q_att  = q_train[-1]
 
+
+
+
+
+    min_threshold = 0.1
+    dis_new    = []
+    q_new  = [q_train[0]]
+    w_new  = []
+    # gmm = gmm_class(q_att, q_train, index_list = index_list)
+    # label = gmm.begin()
+    # K = np.max(label)
+    for i in np.arange(1, N_tot):
+        q_curr = q_new[-1]
+        q_next = q_train[i]
+        dis    = q_next * q_curr.inv()
+        if np.linalg.norm(dis.as_rotvec()) < min_threshold:
+            pass
+        else:
+            w_new.append(q_next)
+            q_new.append(q_next)
+            dis_new.append(dis)
+    w_new.append(w_new[-1])
+
     
+    q_new_arr = list_to_arr(q_new)
+
+    q_new_arr = savgol_filter(q_new_arr, window_length=20, polyorder=2, axis=0, mode="nearest")
+
+
+    # plot_quat(q_new, title='q_new')
+
+    # plot_4d_coord(q_new_arr, title='q_new filtered')
+    # d_train_body = riem_log(q_new, w_new)            # project each displacement wrt their corresponding orientation
+    # d_train_att = parallel_transport(q_new, q_att, d_train_body)
+    # plot_4d_coord(d_train_att, title='w_train_att')
+
+
+
+
+    # d_train_att = riem_log(q_att, w_train)
+
+    # plot_4d_coord(d_train_att, title='w_train_att')
+
+
+        # if label[i] != np.max(label):
+    
+
+
+
+
 
     return q_init, q_att, q_train, w_train, dt, index_list

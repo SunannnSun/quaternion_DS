@@ -179,6 +179,12 @@ def parallel_transport(x, y, v):
     u = v - (log_xy + log_yx) * np.tile(np.sum(log_xy * v, axis=1, keepdims=True) / np.power(d_xy,2)[:, np.newaxis], (1, 4))
 
 
+    # Find rows containing NaN values
+    nan_rows = np.isnan(u).all(axis=1)
+
+    # Replace NaN rows with zero vectors
+    u[nan_rows, :] = np.zeros((1, 4))
+ 
     return u
 
 
@@ -194,7 +200,16 @@ def riem_exp(x, v):
 
     v_norm = np.linalg.norm(v)
 
+    if v_norm == 0:
+        return x
+
     y = x * np.cos(v_norm) + v / v_norm * np.sin(v_norm)
+    
+    # # Find rows containing NaN values
+    # nan_rows = np.isnan(y).all(axis=1)
+
+    # # Replace NaN rows with zero vectors
+    # y[nan_rows, :] = np.zeros((1, 4))
 
     return y
 

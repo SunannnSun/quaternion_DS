@@ -5,9 +5,10 @@ from scipy.stats import multivariate_normal
 from sklearn.mixture import BayesianGaussianMixture
 
 from .quat_tools import *
+from .plot_tools import *
 
 class gmm:
-    def __init__(self, q_att, q_train):
+    def __init__(self, q_att, q_train, **argv):
         
         self.q_att   = q_att
         self.q_train = q_train
@@ -22,6 +23,8 @@ class gmm:
         # self.q_list_q   = list_to_arr(self.q_list)
         # self.q_list_att = riem_log(self.q_att_q, self.q_list_q)
 
+        if "index_list" in argv:
+            self.index_list = argv["index_list"]
 
 
     def begin(self, *args, **argv): #
@@ -32,7 +35,7 @@ class gmm:
         if len(args) == 1:
             assignment_arr = args[0] # pseudo clustering
         elif len(args) == 0:
-            assignment_arr = BayesianGaussianMixture(n_components=5, random_state=2).fit_predict(self.q_train_att)
+            assignment_arr = BayesianGaussianMixture(n_components=3, random_state=2).fit_predict(self.q_train_att)
 
         rearrange_list = []
         for idx, entry in enumerate(assignment_arr):
@@ -47,6 +50,9 @@ class gmm:
         self.assignment_arr = assignment_arr 
         self.K = int(assignment_arr.max()+1)
         self._return_norma_class()
+
+
+        # plot_gmm(self.q_train, self.index_list, assignment_arr)
 
         return self.assignment_arr
 
