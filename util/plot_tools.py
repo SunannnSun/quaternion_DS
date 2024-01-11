@@ -287,6 +287,24 @@ def plot_rot_vec(w_list, **argv):
 
 
 
+def plot_gmm_prob(w_arr, **argv):
+
+    N, K = w_arr.shape
+
+    fig, axs = plt.subplots(K, 1, figsize=(12, 8))
+
+    colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
+    "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
+
+    for k in range(K):
+        axs[k].scatter(np.arange(N), w_arr[:, k], s=5, color=colors[k])
+        axs[k].set_ylim([0, 1])
+    
+    if "title" in argv:
+        axs[0].set_title(argv["title"])
+
+
+
 
 
 

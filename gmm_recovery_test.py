@@ -15,6 +15,7 @@ Load data
 q_init, q_att, q_train, w_train, dt, index_list = load_tools.load_clfd_dataset(task_id=3, num_traj=1, sub_sample=1)
 
 
+
 """
 Smoothen data
 """
@@ -76,62 +77,34 @@ plot_tools.plot_4d_coord(d_train_body, title='d_train_body')
 plot_tools.plot_4d_coord(d_train_att, title='w_train_att')
 
 
+
 """
 GMM validation
 """
+gmm = gmm_class(q_new[-1], q_new, index_list = index_list_new)
+label = gmm.begin()
 
-# gmm = gmm_class(q_new[-1], q_new, index_list = index_list_new)
-# label = gmm.begin()
-
-"""
-h = np.zeros((N, gmm.K))
-
+w_train = np.zeros((N, gmm.K))
 for i in range(N):
-    h[i, :] = gmm.postLogProb(q_new[i]).T
+    w_train[i, :] = gmm.postLogProb(q_new[i]).T
+plot_tools.plot_gmm_prob(w_train, title="GMM Posterior Probability of Original Data")
 
 
-fig, axs = plt.subplots(gmm.K, 1, figsize=(12, 8))
 
-import random 
-colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
-"#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
-
-for k in range(gmm.K):
-    axs[k].scatter(np.arange(N), h[:, k], s=5, color=colors[k])
-    axs[k].set_ylim([0, 1])
-axs[0].set_title("GMM Posterior Probability of Original Data")
 """
-
+Learning
+"""
 quat_ds = quat_ds_class(q_new, w_new, q_att, index_list = index_list_new)
 quat_ds.begin()
 
 
 """
-Verify Learning Results 
+Forward Simulation
 """
-
-# postProb = quat_ds.postProb
-# A        = quat_ds.A
-# K        = quat_ds.K
-# M        = 4
-
-# q_train_att = quat_tools.riem_log(q_att, q_new)
+q_test, w_test = quat_ds.sim(q_init, dt=0.1)
+plot_tools.plot_quat(q_test, title='q_test')
+plot_tools.plot_gmm_prob(w_test, title="GMM Posterior Probability of Reproduced Data")
 
 
-# for k in range(K):
-#     w_pred_att_k = A[k] @ q_train_att.T
-#     if k == 0:
-#         w_pred_att  =  np.tile(postProb[k, :], (M, 1)) *  w_pred_att_k
-#     else:
-#         w_pred_att +=  np.tile(postProb[k, :], (M, 1)) *  w_pred_att_k
-# w_pred_att = w_pred_att.T
-
-# plot_tools.plot_4d_coord(w_pred_att, title="w_pred_att")
-
-pass
-
-q_test = quat_ds.sim(q_init, dt=0.1)
-
-plot_tools.plot_quat(q_test, title="Reconstructed Trajectory")
 plt.show()
 
