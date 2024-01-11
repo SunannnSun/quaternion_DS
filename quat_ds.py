@@ -21,7 +21,7 @@ class quat_ds:
         
     
     def _cluster(self):
-        gmm = gmm_class(self.q_att, self.q_in, index_list = self.index_list)
+        gmm = gmm_class(self.q_in, self.q_att, index_list = self.index_list)
         gmm.begin()
         
         self.postProb = gmm.postLogProb(self.q_in)

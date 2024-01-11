@@ -8,13 +8,13 @@ from .quat_tools import *
 from .plot_tools import *
 
 class gmm:
-    def __init__(self, q_att, q_train, **argv):
+    def __init__(self, q_in, q_att, **argv):
         
         self.q_att   = q_att
-        self.q_train = q_train
+        self.q_in = q_in
 
-        self.q_train_att = riem_log(q_att, q_train)
-        self.N = len(q_train)
+        self.q_train_att = riem_log(q_att, q_in)
+        self.N = len(q_in)
         self.M = 4
 
         # self.q_att   = q_att
@@ -52,7 +52,7 @@ class gmm:
         self._return_norma_class()
 
 
-        plot_gmm(self.q_train, self.index_list, assignment_arr)
+        plot_gmm(self.q_in, self.index_list, assignment_arr)
 
         return self.assignment_arr
 
@@ -77,7 +77,7 @@ class gmm:
         q_normal_list = [] 
 
         for k in range(self.K):
-            q_k      = [q for index, q in enumerate(self.q_train) if self.assignment_arr[index]==k] 
+            q_k      = [q for index, q in enumerate(self.q_in) if self.assignment_arr[index]==k] 
             r_k      = R.from_quat([q.as_quat() for q in q_k])
             q_k_mean = r_k.mean()
         

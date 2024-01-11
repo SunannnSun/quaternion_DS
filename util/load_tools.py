@@ -76,13 +76,10 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     """
     [num_demos=9, trajectory_length=1000, data_dimension=7] 
     A data point consists of 7 elements: px,py,pz,qw,qx,qy,qz (3D position followed by quaternions in the scalar first format).
-
-    Remark: dataset does not provide time stamp. Hence, in order to compute velocity, we woudl like to determine an appropriate dt.
-    Given each task contains 1000 observations, we can safely assume the time it takes to complete one trajectory is 10 seconds.
-
-    Manually dealing with multiple trajectories by assigning correct angular velocity near start and end of each trajecotry; i.e. apply 
-    Savgol separately for each individual trajectory
+    
+    
     """
+
     file_path           = os.path.dirname(os.path.realpath(__file__))
     dir_path            = os.path.dirname(file_path)
 
@@ -93,14 +90,12 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
 
     data        = np.load(datafile)[:, ::sub_sample, :]
     L, N, M     = data.shape
-    T = 10
-    dt = T / 1000 * sub_sample
+    
     N_tot = num_traj * N
 
-
-    q_train = [R.identity()] *  N_tot
-    w_train = [R.identity()] *  N_tot 
-    index_list = [0] *  N_tot
+    q_in  = [R.identity()] * N_tot
+    q_out = [R.identity()] * N_tot 
+    index_list = [0] * N_tot
     
     for l in range(num_traj):
         data_ori = np.zeros((N, 4))
@@ -109,85 +104,22 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
         xyz      = data[l, :, 4:].copy()
         data_ori[:, -1]  = w
         data_ori[:, 0:3] = xyz
-        q_train[l*N: (l+1)*N] = [R.from_quat(q) for q in data_ori.tolist()]
 
+        q_in[l*N: (l+1)*N] = [R.from_quat(q) for q in data_ori.tolist()]
         index_list[l*N: (l+1)*N] = [i for i in range(N)]        
 
-        """
-        rotvec_l = np.zeros((N-1, 3))
-        for i in range(rotvec_l.shape[0]):
-            q_k   = data[l, i,   3:]
-            q_kp1 = data[l, i+1, 3:]
-            rotvec_l[i, :] = _angular_velocities(q_k, q_kp1, dt)
-        
-        rotvec_l = savgol_filter(rotvec_l, window_length=20, polyorder=2, axis=0, mode="nearest")
 
-        if l != num_traj-1:
-            rotvec_l = np.vstack((rotvec_l, rotvec_l[-1, :][np.newaxis, :]))
-            w_train[l*N: (l+1)*N]   = [R.from_rotvec(rotvec_l[j, :]) for j in range(rotvec_l.shape[0])]
-        else:
-            w_train[l*N: (l+1)*N]   = [R.from_rotvec(rotvec_l[j, :]) for j in range(rotvec_l.shape[0])]
-        """
+        # q_out[l*N: (l+1)*N-1] = q_in[l*N+1: (l+1)*N]
+        # q_out[(l+1)*N-1]      =  q_out[(l+1)*N-2]
 
-        w_train[l*N: (l+1)*N-1] = q_train[l*N+1: (l+1)*N]
-        w_train[(l+1)*N-1]      =  w_train[(l+1)*N-2]
-    q_train = _average_traj(q_train, num_traj, N, index_list)
+    q_in = _average_traj(q_in, num_traj, N, index_list)
     
 
-    q_init = q_train[0]
-    q_att  = q_train[-1]
+    q_init = q_in[0]
+    q_att  = q_in[-1]
 
-    plot_quat(q_train, title='q_train_raw')
-
-
-    """
-    Generate next displacement
-    """
-
-    # min_threshold = 0.07
-    # dis_new    = []
-    # q_new  = [q_train[0]]
-    # w_new  = []
-    # # gmm = gmm_class(q_att, q_train, index_list = index_list)
-    # # label = gmm.begin()
-    # # K = np.max(label)
-    # for i in np.arange(1, N_tot):
-    #     q_curr = q_new[-1]
-    #     q_next = q_train[i]
-    #     dis    = q_next * q_curr.inv()
-    #     if np.linalg.norm(dis.as_rotvec()) < min_threshold:
-    #         pass
-    #     else:
-    #         w_new.append(q_next)
-    #         q_new.append(q_next)
-    #         dis_new.append(dis)
-    # w_new.append(w_new[-1])
-    # q_new_arr = list_to_arr(q_new)
-    # q_new_arr = savgol_filter(q_new_arr, window_length=20, polyorder=2, axis=0, mode="nearest")
-    # plot_quat(q_new, title='q_new')
+    plot_quat(q_in, title='q_train_raw')
 
 
-
-    # plot_4d_coord(q_new_arr, title='q_new filtered')
-    # d_train_body = riem_log(q_new, w_new)            # project each displacement wrt their corresponding orientation
-    # d_train_att = parallel_transport(q_new, q_att, d_train_body)
-    # plot_4d_coord(d_train_att, title='w_train_att')
-
-
-
-
-    # d_train_att = riem_log(q_att, w_train)
-
-    # plot_4d_coord(d_train_att, title='w_train_att')
-
-
-        # if label[i] != np.max(label):
-    
-
-    # q_init = q_new[0]
-    # q_att  = q_new[-1]
-    # q_train = q_new
-    # w_train = w_new
-
-    return q_init, q_att, q_train, w_train, dt, index_list
+    return q_in, q_init, q_att, index_list
 
