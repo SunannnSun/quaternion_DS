@@ -136,25 +136,33 @@ def riem_log(x, y):
             y is a single R object
     """
 
+    np.seterr(invalid='ignore')
 
     x, y = _process_xy(x, y)
-    y_copy = y.copy()
 
     N, M = x.shape
 
     angle = unsigned_angle(x, y) 
 
-    y[angle == np.pi] += 0.001
+    y[angle == np.pi] += 0.001 
 
     x_T_y = np.tile(np.sum(x * y, axis=1,keepdims=True), (1,M))
-    
+
     x_T_y_x = x_T_y * x
 
-    u = np.tile(angle[:, np.newaxis]/np.linalg.norm(y_copy-x_T_y_x, axis=1, keepdims=True), (1, M)) * (y_copy-x_T_y_x)
+    u_sca =  np.tile(angle[:, np.newaxis], (1, M))
+    u_vec =  (y-x_T_y_x) / np.tile(np.linalg.norm(y-x_T_y_x, axis=1, keepdims=True), (1, M))
 
-    u[angle == 0] = np.zeros([1, M]) 
+    u  = u_sca * u_vec
 
     
+    """
+    When y=x, the u should be 0 instead of nan.
+    Either of the methods below would work
+    """
+    # u[np.isnan(u)] = 0
+    u[angle == 0] = np.zeros([1, M]) 
+
     return u
 
 
@@ -195,16 +203,21 @@ def riem_exp(x, v):
 
     x = _process_x(x)
 
-    # if v.ndim == 2:
-    #     v = v[:, 0]
+    if v.shape[0] == 1:
 
-    v_norm = np.linalg.norm(v)
+        v_norm = np.linalg.norm(v)
 
-    if v_norm == 0:
-        return x
+        if v_norm == 0:
+            return x
 
-    y = x * np.cos(v_norm) + v / v_norm * np.sin(v_norm)
+        y = x * np.cos(v_norm) + v / v_norm * np.sin(v_norm)
     
+    else:
+        v_norm = np.linalg.norm(v, axis=1, keepdims=True)
+
+        y = np.tile(x, (1000, 1)) * np.tile(np.cos(v_norm), (1,4)) + v / np.tile(v_norm / np.sin(v_norm), (1,4)) 
+
+
     # # Find rows containing NaN values
     # nan_rows = np.isnan(y).all(axis=1)
 

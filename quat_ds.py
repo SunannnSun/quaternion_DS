@@ -38,26 +38,25 @@ class quat_ds:
 
 
     def sim(self, q_init, dt=0.1):
-        N_tot = self.N + 80
+        N = self.N + 100
+        K = self.K
+        h = np.zeros((N, K))
         q_test = [q_init]
 
-        # w_test = np.zeros((N_tot, 4))
 
-        # d_test = [R.identity()] * N_tot  
-
-        for i in range(N_tot):
+        for i in range(N):
             q_curr = q_test[i]
+
+            h_k = self.gmm.postLogProb(q_curr)  
+            h[i, :] = h_k.T
+            
             q_curr_att = riem_log(self.q_att, q_curr)
 
-            h_k = self.gmm.postLogProb(q_curr)  # (K by N)
-
-                      
             d_pred_att = np.zeros((4, 1))
             for k in range(self.K):
                 h_k_i =  h_k[k, 0]
                 w_k_i =  self.A[k] @ q_curr_att.reshape(-1, 1)
                 d_pred_att += h_k_i * w_k_i
-            # d_test[i,:] = d_pred_att.T
 
             d_pred_body = parallel_transport(self.q_att, q_curr, d_pred_att.T)
             d_pred_q    = riem_exp(q_curr, d_pred_body) 
@@ -72,5 +71,17 @@ class quat_ds:
         
         # plot_tools.plot_4d_coord(w_test)
         
-    
+        fig, axs = plt.subplots(K, 1, figsize=(12, 8))
+        
+        import random 
+        colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
+        "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
+        
+        for k in range(K):
+            axs[k].scatter(np.arange(N), h[:, k], s=5, color=colors[k])
+            axs[k].set_ylim([0, 1])
+        axs[0].set_title("GMM Posterior Probability of Reproduced Data")
+
+            # axs[k].legend(loc="upper left")
+
         return q_test

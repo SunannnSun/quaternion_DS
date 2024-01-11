@@ -52,7 +52,7 @@ class gmm:
         self._return_norma_class()
 
 
-        # plot_gmm(self.q_train, self.index_list, assignment_arr)
+        plot_gmm(self.q_train, self.index_list, assignment_arr)
 
         return self.assignment_arr
 
@@ -78,13 +78,13 @@ class gmm:
 
         for k in range(self.K):
             q_k      = [q for index, q in enumerate(self.q_train) if self.assignment_arr[index]==k] 
-            r_k      = R.from_quat([canonical_quat(q.as_quat()) for q in q_k])
+            r_k      = R.from_quat([q.as_quat() for q in q_k])
             q_k_mean = r_k.mean()
         
 
             Prior[k]  = len(q_k)/self.N
             Mu[k]     = q_k_mean
-            Sigma[k]  = riem_cov(q_k_mean, q_k) + 10**(-6) * np.eye(4)
+            Sigma[k]  = riem_cov(q_k_mean, q_k) + 10E-6 * np.eye(4)
 
 
             q_normal_list.append(

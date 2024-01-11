@@ -89,7 +89,7 @@ k2 = 3
 # plt.show()
 
 
-q_init, q_att, q_train, w_train, dt, index_list = load_tools.load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3)
+q_init, q_att, q_train, w_train, dt, index_list = load_tools.load_clfd_dataset(task_id=3, num_traj=1, sub_sample=3)
 
 # q_init, q_att, q_train, w_train, t_train, dt, index_list= traj_generator.generate_traj(q_init=R.identity(), K=2, N=40, dt=0.1)
 
@@ -157,7 +157,7 @@ q_test = quat_ds.sim(q_init, dt=0.1)
 
 
 
-# plot_tools.plot_quat(q_test, title="Reconstructed Quaternion")
+plot_tools.plot_quat(q_test, title="Reconstructed Quaternion")
 
 plot_tools.animate_rotated_axes(q_train)
 plot_tools.animate_rotated_axes(q_test,att=q_att)

@@ -17,17 +17,14 @@ def optimize_quat_system(q_train, w_train, q_att, postProb):
 
     
     q_train_att = riem_log(q_att, q_train)
-    # plot_4d_coord(q_train_att, title='q_train_att')
 
 
     d_train_body = riem_log(q_train, w_train)            # project each displacement wrt their corresponding orientation
-    # plot_4d_coord(d_train_body, title='d_train_body')
-
-
     d_train_att = parallel_transport(q_train, q_att, d_train_body)
 
-    # d_train_att = riem_log(q_att, w_train)
 
+    # plot_4d_coord(q_train_att, title='q_train_att')
+    # plot_4d_coord(d_train_body, title='d_train_body')
     # plot_4d_coord(d_train_att, title='w_train_att')
 
 
@@ -41,10 +38,11 @@ def optimize_quat_system(q_train, w_train, q_att, postProb):
     A_vars = []
     constraints = []
     for k in range(K):
-        A_vars.append(cp.Variable((M, M), symmetric=True))
-        # constraints += [A_vars[k] << 0]
+        A_vars.append(cp.Variable((M, M), symmetric=False))
 
-        constraints += [A_vars[k].T + A_vars[k] << -0.01 * np.eye(4)]
+        # constraints += [A_vars[k].T + A_vars[k] << -10E-3 * np.eye(4)]
+        constraints += [A_vars[k].T + A_vars[k] << np.zeros((4, 4))]
+
         # constraints += [cp.norm(A_vars[k], 'fro') <= max_norm]
 
 
@@ -73,4 +71,5 @@ def optimize_quat_system(q_train, w_train, q_att, postProb):
         print(A_vars[k].value)
         print(np.linalg.norm(A_vars[k].value, 'fro'))
 
+    # print(w_pred_att.value)
     return A_res
