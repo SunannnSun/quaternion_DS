@@ -8,34 +8,22 @@ from .quat_tools import *
 from .plot_tools import *
 
 class gmm:
-    def __init__(self, q_in, q_att, **argv):
+    def __init__(self, q_in, q_att, K_init=3, **argv):
         
-        self.q_att   = q_att
-        self.q_in = q_in
+        self.q_in     = q_in
+        self.q_att    = q_att
+        self.q_in_att = riem_log(q_att, q_in)
 
-        self.q_train_att = riem_log(q_att, q_in)
+        self.K_init = K_init
         self.N = len(q_in)
         self.M = 4
-
-        # self.q_att   = q_att
-        # self.q_att_q = canonical_quat(q_att.as_quat())
-        # self.q_list  = q_list
-        # self.q_list_q   = list_to_arr(self.q_list)
-        # self.q_list_att = riem_log(self.q_att_q, self.q_list_q)
 
         if "index_list" in argv:
             self.index_list = argv["index_list"]
 
 
-    def begin(self, *args, **argv): #
-        """
-        Fill in the actual clustering algorithm and return the result assignment_arr
-        """
-
-        if len(args) == 1:
-            assignment_arr = args[0] # pseudo clustering
-        elif len(args) == 0:
-            assignment_arr = BayesianGaussianMixture(n_components=3, random_state=2).fit_predict(self.q_train_att)
+    def begin(self):
+        assignment_arr = BayesianGaussianMixture(n_components=self.K_init, random_state=2).fit_predict(self.q_in_att)
 
         rearrange_list = []
         for idx, entry in enumerate(assignment_arr):
@@ -51,10 +39,10 @@ class gmm:
         self.K = int(assignment_arr.max()+1)
         self._return_norma_class()
 
-
         plot_gmm(self.q_in, self.index_list, assignment_arr)
 
         return self.assignment_arr
+
 
 
     def _return_norma_class(self):
@@ -67,7 +55,6 @@ class gmm:
 
         @note verify later if the R.mean() yields the same results as manually computing the Krechet mean of quaternion
         """
-
 
 
         Prior   = [0] * self.K

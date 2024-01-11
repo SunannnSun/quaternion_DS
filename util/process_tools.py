@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.spatial.transform import Slerp
 from scipy.spatial.transform import Rotation as R
 from scipy.signal import savgol_filter
 
@@ -11,22 +12,33 @@ from util.plot_tools import *
 
 
 
-def _smooth(q_in, q_att):
-    """
-    Option 1: Savgol Filter
-    """
-    q_in_att  = quat_tools.riem_log(q_att, q_in)
+def _smooth(q_in, q_att, opt):
 
-    q_new_att = savgol_filter(q_in_att, window_length=80, polyorder=2, axis=0, mode="nearest")
+    if opt == "savgol":
+        q_in_att  = quat_tools.riem_log(q_att, q_in)
 
-    q_new_arr = quat_tools.riem_exp(q_att, q_new_att)
+        q_new_att = savgol_filter(q_in_att, window_length=80, polyorder=2, axis=0, mode="nearest")
 
-    q_new     = [R.from_quat(q_new_arr[i, :]) for i in range(q_new_arr.shape[0])]
+        q_new_arr = quat_tools.riem_exp(q_att, q_new_att)
+
+        q_new     = [R.from_quat(q_new_arr[i, :]) for i in range(q_new_arr.shape[0])]
     
+    
+    elif opt == "slerp":
+        k = 40
+        t_list = [0.1*i for i in range(len(q_in))]
+        
+        idx_list  = np.linspace(0, len(q_in)-1, num=int(len(q_in)/k), endpoint=True, dtype=int)
+        key_times = [t_list[i] for i in idx_list]
+        key_rots  = R.from_quat([q_in[i].as_quat() for i in idx_list])
+        
+        slerp = Slerp(key_times, key_rots)
 
-    """
-    Option 2: SLERP Interpolation
-    """
+        idx_list  = np.linspace(0, len(q_in)-1, num=int(len(q_in)), endpoint=True, dtype=int)
+        key_times = [t_list[i] for i in idx_list]
+
+        q_interp = slerp(key_times)
+        q_new    = [q_interp[i] for i in range(len(q_interp))]
 
     # plot_tools.plot_4d_coord(q_smooth_arr, title='q_smooth_arr')
 
@@ -40,7 +52,7 @@ def _filter(q_in, q_att, index_list):
 
     N = len(q_in)
 
-    max_threshold = 0.03
+    max_threshold = 0.01
 
     threshold = max_threshold * np.ones((N, ))
     threshold[label==gmm.K-1] = np.linspace(max_threshold, 0, num=np.sum(label==gmm.K-1), endpoint=True)
@@ -66,9 +78,9 @@ def _filter(q_in, q_att, index_list):
 
 
 
-def pre_process(q_in_raw, q_att, index_list):
+def pre_process(q_in_raw, q_att, index_list, opt="savgol"):
 
-    q_in                    = _smooth(q_in_raw, q_att)
+    q_in                    = _smooth(q_in_raw, q_att, opt)
     q_in, q_out, index_list = _filter(q_in, q_att, index_list)
 
 
@@ -78,7 +90,6 @@ def pre_process(q_in_raw, q_att, index_list):
     
     q_init = q_in[0]
     q_att  = q_in[-1]
-
 
 
     return q_in, q_out, q_init, q_att, index_list
