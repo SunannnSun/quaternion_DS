@@ -12,7 +12,7 @@ from scipy.signal import savgol_filter
 """
 Load data
 """
-q_train, q_init, q_att, index_list = load_tools.load_clfd_dataset(task_id=2, num_traj=1, sub_sample=1)
+q_train, q_init, q_att, index_list = load_tools.load_clfd_dataset(task_id=0, num_traj=1, sub_sample=1)
 
 
 

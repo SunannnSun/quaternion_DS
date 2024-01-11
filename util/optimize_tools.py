@@ -23,8 +23,8 @@ def optimize_quat_system(q_in, q_out, q_att, postProb):
 
 
     # plot_4d_coord(q_in_att, title='q_in_att')
-    # plot_4d_coord(q_out_body, title='q_out_body')
-    # plot_4d_coord(q_out_att, title='w_train_att')
+    plot_4d_coord(q_out_body, title='q_out_body')
+    # plot_4d_coord(q_out_att, title='q_out_att')
 
 
     

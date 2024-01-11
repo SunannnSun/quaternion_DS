@@ -107,11 +107,7 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
 
         q_in[l*N: (l+1)*N] = [R.from_quat(q) for q in data_ori.tolist()]
         index_list[l*N: (l+1)*N] = [i for i in range(N)]        
-
-
-        # q_out[l*N: (l+1)*N-1] = q_in[l*N+1: (l+1)*N]
-        # q_out[(l+1)*N-1]      =  q_out[(l+1)*N-2]
-
+        
     q_in = _average_traj(q_in, num_traj, N, index_list)
     
 
