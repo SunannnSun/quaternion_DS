@@ -9,20 +9,18 @@ from util.gmm import gmm as gmm_class
 
 
 class quat_ds:
-    def __init__(self, q_in, q_out, q_att, K_init=3, **argv) -> None:
+    def __init__(self, q_in, q_out, q_att, index_list, K_init) -> None:
         self.q_in  = q_in
         self.q_out = q_out
         self.q_att = q_att
-        
+        self.index_list = index_list
         self.K_init = K_init
-        self.N = len(q_in)
 
-        if "index_list" in argv:
-            self.index_list = argv["index_list"]
+        self.N = len(q_in)
         
     
     def _cluster(self):
-        gmm = gmm_class(self.q_in, self.q_att, self.K_init, index_list = self.index_list)
+        gmm = gmm_class(self.q_in, self.q_att, self.index_list, self.K_init)
         gmm.begin()
         
         self.postProb = gmm.postLogProb(self.q_in)

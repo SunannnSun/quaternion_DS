@@ -16,7 +16,7 @@ q_in, q_out, q_init, q_att, index_list  = process_tools.pre_process(q_in, index_
 
 """############ PERFORM QUAT-DS ############"""
 
-quat_ds = quat_ds_class(q_in, q_out, q_att, K_init=4, index_list = index_list)
+quat_ds = quat_ds_class(q_in, q_out, q_att, index_list, K_init=4)
 quat_ds.begin()
 
 

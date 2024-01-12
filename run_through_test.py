@@ -24,8 +24,7 @@ for opt in opt_list:
         q_test, w_test = quat_ds.sim(q_init)
 
 
-
         plot_tools.plot_quat(q_test, title='q_test')
-        plot_tools.plot_gmm_prob(w_test, title="GMM Posterior Probability of Reproduced Data "+opt+" task: " +str(i))
+        plot_tools.plot_gmm_prob(w_test, title="GMM Posterior Probability "+opt+" task: " +str(i))
 
         plt.show()
