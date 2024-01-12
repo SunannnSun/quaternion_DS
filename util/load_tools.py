@@ -11,37 +11,6 @@ from util.plot_tools import *
 
 
 
-def _average_traj(q_list, num_traj, num_per_traj, index_list):
-    """
-    Given multiple sequence of trajecotry, take the last point of each trajectory and average out as the attractor,
-    then shift each trajectory so that they all end up at a common attractor
-
-    Note: averaging and shifting will somehow flip the signs of all quaternions. Nevertheless, the resulting sequence
-    is still smooth and continuous; proceeding operations wrt the attractor 
-    """
-
-    N = num_per_traj
-
-    q_att_list = [R.identity().as_quat()] * num_traj
-    for l in range(num_traj):
-        q_att_list[l] = q_list[(l+1) * N - 1].as_quat()
-
-    q_att_list = R.from_quat(q_att_list)
-    q_att_avg = q_att_list.mean()
-
-    q_shifted = [R.identity()] * len(q_list)
-    for l in range(num_traj):
-        q_diff =  q_att_avg * q_att_list[l].inv()
-        q_shifted[l*N: (l+1)*N] = [q_diff * q for q in q_list[l*N: (l+1)*N]]
-
-    # ax = plot_tools.plot_demo(q_list, index_list=index_list, title="unshifted demonstration")
-    # ax = plot_tools.plot_demo(q_shifted, index_list=index_list, title="shifted demonstration")
-
-    return q_shifted
-
-
-
-
 def _get_sequence(seq_file):
     """
     Returns a list of containing each line of `seq_file`
@@ -61,16 +30,6 @@ def _get_sequence(seq_file):
 
 
 
-def _angular_velocities(q1, q2, dt):
-    """
-    https://mariogc.com/post/angular-velocity-quaternions/
-    """
-    return (2 / dt) * np.array([
-        q1[0]*q2[1] - q1[1]*q2[0] - q1[2]*q2[3] + q1[3]*q2[2],
-        q1[0]*q2[2] + q1[1]*q2[3] - q1[2]*q2[0] - q1[3]*q2[1],
-        q1[0]*q2[3] - q1[1]*q2[2] + q1[2]*q2[1] - q1[3]*q2[0]])
-    
-
 
 def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     """
@@ -89,13 +48,10 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     
 
     data        = np.load(datafile)[:, ::sub_sample, :]
-    L, N, M     = data.shape
-    
+    _, N, _     = data.shape
     N_tot = num_traj * N
 
     q_in  = [R.identity()] * N_tot
-    q_out = [R.identity()] * N_tot 
-    index_list = [0] * N_tot
     
     for l in range(num_traj):
         data_ori = np.zeros((N, 4))
@@ -106,16 +62,8 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
         data_ori[:, 0:3] = xyz
 
         q_in[l*N: (l+1)*N] = [R.from_quat(q) for q in data_ori.tolist()]
-        index_list[l*N: (l+1)*N] = [i for i in range(N)]        
-        
-    q_in = _average_traj(q_in, num_traj, N, index_list)
+
+    index_list = [np.arange(l*N, (l+1)*N) for l in range(num_traj)]
     
-
-    q_init = q_in[0]
-    q_att  = q_in[-1]
-
-    plot_quat(q_in, title='q_train_raw')
-
-
-    return q_in, q_init, q_att, index_list
+    return q_in, index_list
 

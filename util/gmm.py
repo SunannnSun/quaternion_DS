@@ -39,7 +39,7 @@ class gmm:
         self.K = int(assignment_arr.max()+1)
         self._return_norma_class()
 
-        plot_gmm(self.q_in, self.index_list, assignment_arr)
+        # plot_gmm(self.q_in, self.index_list, assignment_arr)
 
         return self.assignment_arr
 

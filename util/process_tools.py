@@ -12,6 +12,37 @@ from util.plot_tools import *
 
 
 
+def _shift(q_list):
+    """
+    Given multiple sequence of trajecotry, take the last point of each trajectory and average out as the attractor,
+    then shift each trajectory so that they all end up at a common attractor
+
+    Note: averaging and shifting will somehow flip the signs of all quaternions. Nevertheless, the resulting sequence
+    is still smooth and continuous; proceeding operations wrt the attractor 
+    """
+
+    N = len(q_list)
+    num_traj = 1
+
+    q_att_list = [R.identity().as_quat()] * num_traj
+    for l in range(num_traj):
+        q_att_list[l] = q_list[(l+1) * N - 1].as_quat()
+
+    q_att_list = R.from_quat(q_att_list)
+    q_att_avg = q_att_list.mean()
+
+    q_shifted = [R.identity()] * len(q_list)
+    for l in range(num_traj):
+        q_diff =  q_att_avg * q_att_list[l].inv()
+        q_shifted[l*N: (l+1)*N] = [q_diff * q for q in q_list[l*N: (l+1)*N]]
+
+    # ax = plot_tools.plot_demo(q_list, index_list=index_list, title="unshifted demonstration")
+    # ax = plot_tools.plot_demo(q_shifted, index_list=index_list, title="shifted demonstration")
+
+    return q_shifted, q_shifted[-1]
+
+
+
 def _smooth(q_in, q_att, opt):
 
     if opt == "savgol":
@@ -78,7 +109,9 @@ def _filter(q_in, q_att, index_list):
 
 
 
-def pre_process(q_in_raw, q_att, index_list, opt="savgol"):
+def pre_process(q_in_raw, index_list, opt="savgol"):
+
+    q_in, q_att = _shift(q_in_raw)
 
     q_in                    = _smooth(q_in_raw, q_att, opt)
     q_in, q_out, index_list = _filter(q_in, q_att, index_list)
