@@ -6,6 +6,47 @@ from .quat_tools import *
 import random
 
 
+def _interp_index_list(q_list, index_list, interp=True):
+    L = len(index_list)
+
+    # if interp=False, then no interpolation is needed, just need to 
+    # make sure each traj starting at 0 and ending at N
+    index_list_interp = [np.ones((1, ))] * L
+
+    if interp == False:
+        N = index_list[0].shape[0]
+        for l in range(L):
+            index_list_interp[l] = np.arange(0, N)
+
+    elif interp == True:
+        ref = index_list[0]
+        for l in np.arange(1, L):
+            if index_list[l].shape[0] > ref.shape[0]:
+                ref = index_list[l]
+        N = ref[-1]
+
+        for l in range(L):
+            index_list_interp[l] =np.linspace(0, N, num=index_list[l].shape[0], endpoint=True, dtype=int)
+
+        
+    index_list_interp = np.hstack(index_list_interp)
+
+
+    # find the longest traj as reference
+
+    # Init it starting from 0 to N
+
+    # For the remaining traj, starting from the first point as index 0
+    # then compare the rest of points with the reference, and use the index of
+    # the closest point from the reference as the new index
+
+
+    # The last point of the remaining traj should always be the same as N
+
+
+    # Return the new index list after interpolation
+    return index_list_interp
+
 
 def _plot_rotated_axes(ax, r , offset=(0, 0, 0), scale=1):
     """
@@ -143,52 +184,29 @@ def plot_gmm(q_list, index_list, label):
     pass
 
 
-
-def plot_demo(q_list, *args, **argv):
+def plot_demo(q_list, index_list, interp, **argv):
     """
     Plot scatter quaternions from demonstrations.
     """
-    if "ax" not in argv:
-        fig = plt.figure()
-        ax = fig.add_subplot()
-        ax.figure.set_size_inches(12, 6)
-    else:
-        ax = argv["ax"]
-
-    if "index_list" in argv:
-        index_list = argv["index_list"] 
-    else:
-        index_list = np.arange(len(q_list))
-
-    q_list_q = list_to_arr(q_list)
-
     label_list = ['x', 'y', 'z', 'w']
-    N = q_list_q.shape[0]
-
     colors = ['red', 'blue', 'lime', 'magenta']
 
-    for k in range(4):
-        ax.scatter(index_list, q_list_q[:, k], s= 2, color=colors[k], label = label_list[k])
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.figure.set_size_inches(12, 6)
 
+    index_list_interp = _interp_index_list(q_list, index_list, interp)
+
+    q_list_q = list_to_arr(q_list)
+    for k in range(4):
+        ax.scatter(index_list_interp, q_list_q[:, k], s= 1, color=colors[k], label = label_list[k])
     ax.legend()
+
     if "title" in argv:
         ax.set_title(argv["title"])
 
-    """
-    fig, axs = plt.subplots(4, 1, figsize=(12, 8))
+    pass
 
-    N = q_list_q.shape[0]
-    colors = ['red', 'blue', 'lime', 'magenta']
-    for k in range(4):
-        axs[k].plot(np.arange(N), q_list_q[:, k], color=colors[k], label = label_list[k])
-        axs[k].legend(loc="upper left")
-   
-    if "title" in argv:
-            axs[0].set_title(argv["title"])
-    """
-    # plt.show()
-
-    return ax
 
 
 
