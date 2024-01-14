@@ -22,7 +22,7 @@ class gmm:
     def begin(self):
         q_in_att = riem_log(self.q_att, self.q_in)
 
-        assignment_arr = BayesianGaussianMixture(n_components=self.K_init, n_init=10, random_state=2).fit_predict(q_in_att)
+        assignment_arr = BayesianGaussianMixture(n_components=self.K_init, n_init=3, random_state=2).fit_predict(q_in_att)
 
         rearrange_list = []
         for idx, entry in enumerate(assignment_arr):
@@ -64,16 +64,10 @@ class gmm:
 
         for k in range(self.K):
             q_k      = [q for index, q in enumerate(self.q_in) if self.assignment_arr[index]==k] 
-            r_k      = R.from_quat([q.as_quat() for q in q_k])
+            # r_k      = R.from_quat([q.as_quat() for q in q_k])
             # q_k_mean = r_k.mean()
-
-
             q_k_mean = quat_mean(q_k)
 
-            # print(str(k)+" component")
-            # print(q_avg.as_quat())
-            # print(q_k_mean.as_quat())
-    
     
             Prior[k]  = len(q_k)/self.N
             Mu[k]     = q_k_mean
@@ -91,8 +85,6 @@ class gmm:
         self.Prior = Prior
         self.q_normal_list = q_normal_list
 
-
-    
 
 
 

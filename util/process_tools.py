@@ -26,6 +26,7 @@ def _shift(q_list, index_list):
     q_att      = [q_list[index_list[l][-1]]  for l in range(L)]
     q_att_quat = [q_att[l].as_quat() for l in range(L)]
     q_att_avg  = R.from_quat(q_att_quat).mean()
+    # q_att_avg = quat_tools.quat_mean(q_att)
 
     q_shifted = []
     for l in range(L):
@@ -128,8 +129,15 @@ def pre_process(q_in_raw, index_list, opt="savgol"):
     q_in, q_out, index_list = _filter(q_in, index_list)
     # plot_tools.plot_demo(q_in, index_list, interp=True, title='q_filter')
     
-    q_init = q_in[0]
-    q_att  = q_in[-1]
+
+    q_init = [q_in[index_list[l][0]]  for l in range(len(index_list))]
+    q_init = quat_tools.quat_mean(q_init)
+
+    q_att = [q_in[index_list[l][-1]]  for l in range(len(index_list))]
+    q_att = quat_tools.quat_mean(q_att)
+
+    # q_init = q_in[0]
+    # q_att  = q_in[-1]
 
 
     return q_in, q_out, q_init, q_att, index_list

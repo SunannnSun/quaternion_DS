@@ -1,13 +1,6 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
-from scipy.signal import savgol_filter
-
-from util import plot_tools, optimize_tools, quat_tools
-from util.gmm import gmm as gmm_class
-from util.quat_tools import *
-from util.plot_tools import *
 
 
 
@@ -33,8 +26,11 @@ def _get_sequence(seq_file):
 
 def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     """
-    [num_demos=9, trajectory_length=1000, data_dimension=7] 
-    A data point consists of 7 elements: px,py,pz,qw,qx,qy,qz (3D position followed by quaternions in the scalar first format).
+    Solely used to load the raw dataset
+
+    Note:
+        [num_demos=9, trajectory_length=1000, data_dimension=7] 
+        A data point consists of 7 elements: px,py,pz,qw,qx,qy,qz (3D position followed by quaternions in the scalar first format).
     """
 
     file_path           = os.path.dirname(os.path.realpath(__file__))
