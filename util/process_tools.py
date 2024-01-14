@@ -126,8 +126,7 @@ def pre_process(q_in_raw, index_list, opt="savgol"):
     # plot_tools.plot_demo(q_in, index_list, interp=False, title='q_smooth')
 
     q_in, q_out, index_list = _filter(q_in, index_list)
-    plot_tools.plot_demo(q_in, index_list, interp=True, title='q_filter')
-
+    # plot_tools.plot_demo(q_in, index_list, interp=True, title='q_filter')
     
     q_init = q_in[0]
     q_att  = q_in[-1]

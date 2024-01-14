@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from util import optimize_tools
+from util import optimize_tools, plot_tools
 from util.quat_tools import *
 from util.gmm import gmm as gmm_class   
 
@@ -26,6 +26,7 @@ class quat_ds:
         self.postProb = gmm.postLogProb(self.q_in)
         self.gmm      = gmm
         self.K        = gmm.K
+        
 
 
     def _optimize(self):
@@ -52,7 +53,7 @@ class quat_ds:
             Control the scale of displacement by setting a celling and floor 
         """    
         
-        N = self.N + 100
+        N = len(self.index_list) + 500
         K = self.K
         A = self.A
         q_att = self.q_att

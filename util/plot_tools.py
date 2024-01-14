@@ -163,8 +163,6 @@ def animate_rotated_axes(R_list, scale=1, **argv):
 
 def plot_gmm(q_list, index_list, label):
 
-    N = index_list[-1] + 1
-
     colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
     "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
 
@@ -172,13 +170,13 @@ def plot_gmm(q_list, index_list, label):
     ax = fig.add_subplot()
     ax.figure.set_size_inches(12, 6)
 
+    index_list_interp = _interp_index_list(q_list, index_list, interp=True)
+
     color_mapping = np.take(colors, label)
 
     q_list_q = list_to_arr(q_list)
-
-
     for k in range(4):
-        ax.scatter(index_list, q_list_q[:, k], s=2, c=color_mapping)
+        ax.scatter(index_list_interp, q_list_q[:, k], s=1, c=color_mapping)
 
     ax.set_title("GMM results")
     pass
@@ -199,8 +197,7 @@ def plot_demo(q_list, index_list, interp, **argv):
 
     q_list_q = list_to_arr(q_list)
     for k in range(4):
-        ax.scatter(index_list_interp, q_list_q[:, k], s= 1, color=colors[k], label = label_list[k])
-    ax.legend()
+        ax.scatter(index_list_interp, q_list_q[:, k], s= 1, color=colors[k])
 
     if "title" in argv:
         ax.set_title(argv["title"])

@@ -9,6 +9,25 @@ from scipy.spatial.transform import Rotation as R
 """
 
 
+def quat_mean(q_list):
+    """
+    Given a list of R objects, compute quaternion average while retaining the proper sign
+    """
+
+    q_avg = q_list[0]
+    errors = np.zeros((3, len(q_list)))
+    error_sum = np.ones(3)
+    while np.linalg.norm(error_sum) > 0.01:
+        for idx, q  in enumerate(q_list):
+            error = q * q_avg.inv()
+            errors[:, idx] = error.as_rotvec()
+        error_sum = np.mean(errors, 1)
+        q_err  = R.from_rotvec(error_sum)
+        q_avg = q_err * q_avg
+
+    return q_avg
+
+
 def _process_x(x):
     """
     x can be either
