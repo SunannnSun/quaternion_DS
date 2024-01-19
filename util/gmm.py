@@ -9,45 +9,26 @@ from .plot_tools import *
 
 
 class gmm:
-    def __init__(self, q_in, q_att, K_init):
+    def __init__(self, q_in, q_att):
         self.q_in     = q_in
         self.q_att    = q_att
-        self.K_init = K_init
 
         self.N = len(q_in)
         self.M = 4
-    
-
-
-    def _rearrange_array(self, assignment_arr):
-        
-        rearrange_list = []
-        for idx, entry in enumerate(assignment_arr):
-            if not rearrange_list:
-                rearrange_list.append(entry)
-            if entry not in rearrange_list:
-                rearrange_list.append(entry)
-                assignment_arr[idx] = len(rearrange_list) - 1
-            else:
-                assignment_arr[idx] = rearrange_list.index(entry)   
-        
-        return assignment_arr
 
 
 
-    def fit(self):
+    def fit(self, K_init):
         q_in_att = riem_log(self.q_att, self.q_in)
 
-        gmm = BayesianGaussianMixture(n_components=self.K_init, n_init=3, random_state=2).fit(q_in_att)
+        gmm = BayesianGaussianMixture(n_components=K_init, n_init=1, random_state=2).fit(q_in_att)
 
         assignment_arr = gmm.predict(q_in_att)
-        assignment_arr = self._rearrange_array(assignment_arr)
+        assignment_arr = self._rearrange_array_fit(assignment_arr)
 
-
-        self.gmm = gmm
         self.K = int(assignment_arr.max()+1)
         self._return_normal_class(assignment_arr)
-
+        self.gmm = gmm
 
 
 
@@ -55,13 +36,13 @@ class gmm:
         q_in_att = riem_log(self.q_att, q_in)
 
         assignment_arr = self.gmm.predict(q_in_att)
-        assignment_arr = self._rearrange_array(assignment_arr)
-  
+        assignment_arr = self._rearrange_array_predict(assignment_arr)
+
         postProb = self.postLogProb(q_in)
         
-        plot_gmm(q_in, index_list, assignment_arr, interp=False)
+        plot_gmm(q_in, index_list, assignment_arr, interp=True)
 
-        return assignment_arr, postProb
+        return postProb
 
 
 
@@ -195,7 +176,7 @@ class gmm:
                 }
             )
         
-        dual_gmm = gmm(self.q_in, self.q_att, self.K_init)
+        dual_gmm = gmm(self.q_in, self.q_att)
         dual_gmm.K = K_dual
         dual_gmm.Prior = Prior_dual
         dual_gmm.q_normal_list = q_normal_list_dual
@@ -205,3 +186,31 @@ class gmm:
 
 
 
+    def _rearrange_array_fit(self, assignment_arr):
+        """
+        Remove empty components and arrange components in order
+        """
+        rearrange_list = []
+        for idx, entry in enumerate(assignment_arr):
+            if not rearrange_list:
+                rearrange_list.append(entry)
+            if entry not in rearrange_list:
+                rearrange_list.append(entry)
+                assignment_arr[idx] = len(rearrange_list) - 1
+            else:
+                assignment_arr[idx] = rearrange_list.index(entry)   
+        
+        self.rearrange_list = rearrange_list
+        return assignment_arr
+
+
+
+
+    def _rearrange_array_predict(self, assignment_arr):
+        """
+        Match the components from _rearrange_array_fit
+        """
+        rearrange_list = self.rearrange_list
+        for idx, entry in enumerate(assignment_arr):
+            assignment_arr[idx] = rearrange_list.index(entry)   
+        return assignment_arr

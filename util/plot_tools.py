@@ -9,11 +9,23 @@ import random
 def _interp_index_list(q_list, index_list, interp=True):
     L = len(index_list)
 
-    # if interp=False, then no interpolation is needed, just need to 
-    # make sure each traj starting at 0 and ending at N
     index_list_interp = []
 
     if interp == True:
+        ref = index_list[0]
+        for l in np.arange(1, L):
+            if index_list[l].shape[0] > ref.shape[0]:
+                ref = index_list[l]
+        N = ref[-1]
+
+        for l in range(L):
+            index_list_interp.append(np.linspace(0, N, num=index_list[l].shape[0], endpoint=True, dtype=int))
+
+    elif interp == False:
+        for l in range(L):
+            index_list_interp.append(index_list[l] - index_list[l][0])
+
+    else:
         for l in range(L):
             if l != L-1:
                 N = index_list[l+1][0] - index_list[l][0] 
@@ -21,38 +33,7 @@ def _interp_index_list(q_list, index_list, interp=True):
                 N = len(q_list) - index_list[l][0]
             index_list_interp.append(np.arange(0, N))
 
-    elif interp == False:
-        for l in range(L):
-            index_list_interp.append(index_list[l] - index_list[l][0])
-
-
-            # if l != L-1:
-            #     N = index_list[l+1][0] - index_list[l][0] 
-            # else:
-            #     N = len(q_list) - index_list[l][0]
-            # index_list_interp.append(np.arange(0, N))
-
-    # for l in range(L):
-    # #     index_list_interp[l] =np.linspace(0, N, num=index_list[l].shape[0], endpoint=True, dtype=int)
-    #     index_list_interp.append(index_list[l] - index_list[l][0])
-        
-    index_list_interp = np.hstack(index_list_interp)
-
-
-    # find the longest traj as reference
-
-    # Init it starting from 0 to N
-
-    # For the remaining traj, starting from the first point as index 0
-    # then compare the rest of points with the reference, and use the index of
-    # the closest point from the reference as the new index
-
-
-    # The last point of the remaining traj should always be the same as N
-
-
-    # Return the new index list after interpolation
-    return index_list_interp
+    return np.hstack(index_list_interp)
 
 
 def _plot_rotated_axes(ax, r , offset=(0, 0, 0), scale=1):

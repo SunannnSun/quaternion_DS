@@ -33,7 +33,6 @@ def _shift(q_list, index_list):
         q_diff     = q_att_avg * q_att[l].inv()
         q_shifted += [q_diff * q_list[index] for index in index_list[l]]
 
-
     return q_shifted, q_shifted[-1]
 
 
@@ -75,33 +74,21 @@ def _smooth(q_in, q_att, index_list, opt):
             q_interp = slerp(key_times)
             q_new    += [q_interp[i] for i in range(len(q_interp))]
 
-
     return q_new
 
 
-def _filter(q_in, index_list):
 
+def _filter(q_in, index_list):
+    L = len(index_list)
     max_threshold = 0.01
 
     q_new = []
     q_out = []
     index_list_new = []
 
-    for l in range(len(index_list)):
-        # if l == 0:
-        #     index_list_l = np.array([0])
-        # else:
-        #     index_list_l = np.array([index_list_new[l-1][-1]+1]) # Add 1 onto the last point of the previous traj
-        
-
-
-        # q_in_l  = [q_in[idx] for idx in index_list[l]]
-
-        # N = len(q_in_l)
+    for l in range(L):
         N = index_list[l].shape[0]
 
-
-        # threshold = max_threshold * np.ones((N, ))
         threshold = np.linspace(max_threshold, 0, num=N, endpoint=True)
 
         q_new.append(q_in[index_list[l][0]])
@@ -111,17 +98,15 @@ def _filter(q_in, index_list):
             q_curr = q_new[-1]
             q_next = q_in[index_list[l][i]]
             dis    = q_next * q_curr.inv()
-            if np.linalg.norm(dis.as_rotvec()) < threshold[i]:
-                pass
-            else:
+            if np.linalg.norm(dis.as_rotvec()) > threshold[i]:
                 q_new.append(q_next)
                 q_out.append(q_next)
-                # index_list_l = np.append(index_list_l, index_list_l[-1]+1)
                 index_list_l.append(index_list[l][i])
+
         q_out.append(q_out[-1])
         index_list_new.append(np.array(index_list_l))
 
-    return q_new, q_out, index_list_new
+    return q_out, index_list_new
 
 
 
@@ -133,7 +118,7 @@ def pre_process(q_in_raw, index_list, opt="savgol"):
     q_in                    = _smooth(q_in, q_att, index_list, opt)
     # plot_tools.plot_demo(q_in, index_list, interp=False, title='q_smooth')
 
-    _, q_out, index_list = _filter(q_in, index_list)
+    q_out, index_list = _filter(q_in, index_list)
     # plot_tools.plot_demo(q_in, index_list, interp=True, title='q_filter')
     
 
@@ -142,9 +127,5 @@ def pre_process(q_in_raw, index_list, opt="savgol"):
 
     q_att = [q_in[index_list[l][-1]]  for l in range(len(index_list))]
     q_att = quat_tools.quat_mean(q_att)
-
-    # q_init = q_in[0]
-    # q_att  = q_in[-1]
-
 
     return q_in, q_out, q_init, q_att, index_list

@@ -21,29 +21,24 @@ class quat_ds:
         """
         Mapping q_in to index_list
         """
-        q_in_new = []
-
+        q_new = []
         for l in range(len(index_list)):
             for idx in index_list[l]:
-                q_in_new.append(q_in[idx])
-        
-        self.q_in_new = q_in_new
+                q_new.append(q_in[idx])
+        self.q_new = q_new
     
 
-
     def _cluster(self):
-        gmm = gmm_class(self.q_in, self.q_att, self.K_init)
-        gmm.fit()
-        _, self.postProb = gmm.predict(self.q_in_new, self.index_list)
-        
-        # self.postProb = gmm.postLogProb(self.q_in)
-        self.gmm      = gmm
-        self.K        = gmm.K
-        
+        gmm = gmm_class(self.q_in, self.q_att)
+        gmm.fit(self.K_init)
 
+        self.postProb = gmm.predict(self.q_new, self.index_list)
+        self.K        = gmm.K
+        self.gmm      = gmm
+        
 
     def _optimize(self):
-        self.A = optimize_tools.optimize_quat_system(self.q_in_new, self.q_out, self.q_att, self.postProb)
+        self.A = optimize_tools.optimize_quat_system(self.q_new, self.q_out, self.q_att, self.postProb)
 
 
     def begin(self):
@@ -65,7 +60,6 @@ class quat_ds:
         To-do:
             Control the scale of displacement by setting a celling and floor 
         """    
-
 
         q_init = self._rectify(q_init)
         
@@ -92,7 +86,6 @@ class quat_ds:
             
             q_test.append(q_out)
         
-        
         return q_test, w_test
     
 
@@ -104,7 +97,7 @@ class quat_ds:
         dual_gmm = self.gmm._dual_gmm()
         w_init = dual_gmm.postLogProb(q_init).T
 
-        # plot_tools.plot_gmm_prob(w_train, title="GMM Posterior Probability of Original Data")
+        # plot_tools.plot_gmm_prob(w_init, title="GMM Posterior Probability of Original Data")
 
         index_of_largest = np.argmax(w_init)
 
