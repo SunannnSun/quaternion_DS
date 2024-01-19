@@ -18,19 +18,32 @@ class quat_ds:
 
         self.N = len(q_in)
         
-    
-    def _cluster(self):
-        gmm = gmm_class(self.q_in, self.q_att, self.index_list, self.K_init)
-        gmm.begin()
+        """
+        Mapping q_in to index_list
+        """
+        q_in_new = []
+
+        for l in range(len(index_list)):
+            for idx in index_list[l]:
+                q_in_new.append(q_in[idx])
         
-        self.postProb = gmm.postLogProb(self.q_in)
+        self.q_in_new = q_in_new
+    
+
+
+    def _cluster(self):
+        gmm = gmm_class(self.q_in, self.q_att, self.K_init)
+        gmm.fit()
+        _, self.postProb = gmm.predict(self.q_in_new, self.index_list)
+        
+        # self.postProb = gmm.postLogProb(self.q_in)
         self.gmm      = gmm
         self.K        = gmm.K
         
 
 
     def _optimize(self):
-        self.A = optimize_tools.optimize_quat_system(self.q_in, self.q_out, self.q_att, self.postProb)
+        self.A = optimize_tools.optimize_quat_system(self.q_in_new, self.q_out, self.q_att, self.postProb)
 
 
     def begin(self):

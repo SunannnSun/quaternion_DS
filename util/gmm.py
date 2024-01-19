@@ -9,22 +9,18 @@ from .plot_tools import *
 
 
 class gmm:
-    def __init__(self, q_in, q_att, index_list, K_init):
+    def __init__(self, q_in, q_att, K_init):
         self.q_in     = q_in
         self.q_att    = q_att
-        self.index_list = index_list
         self.K_init = K_init
 
         self.N = len(q_in)
         self.M = 4
+    
+
+
+    def _rearrange_array(self, assignment_arr):
         
-
-
-    def begin(self):
-        q_in_att = riem_log(self.q_att, self.q_in)
-
-        assignment_arr = BayesianGaussianMixture(n_components=self.K_init, n_init=3, random_state=2).fit_predict(q_in_att)
-
         rearrange_list = []
         for idx, entry in enumerate(assignment_arr):
             if not rearrange_list:
@@ -34,18 +30,42 @@ class gmm:
                 assignment_arr[idx] = len(rearrange_list) - 1
             else:
                 assignment_arr[idx] = rearrange_list.index(entry)   
+        
+        return assignment_arr
 
-        self.assignment_arr = assignment_arr 
+
+
+    def fit(self):
+        q_in_att = riem_log(self.q_att, self.q_in)
+
+        gmm = BayesianGaussianMixture(n_components=self.K_init, n_init=3, random_state=2).fit(q_in_att)
+
+        assignment_arr = gmm.predict(q_in_att)
+        assignment_arr = self._rearrange_array(assignment_arr)
+
+
+        self.gmm = gmm
         self.K = int(assignment_arr.max()+1)
-        self._return_normal_class()
-
-        plot_gmm(self.q_in, self.index_list, assignment_arr)
-
-        return self.assignment_arr
+        self._return_normal_class(assignment_arr)
 
 
 
-    def _return_normal_class(self):
+
+    def predict(self, q_in, index_list):
+        q_in_att = riem_log(self.q_att, q_in)
+
+        assignment_arr = self.gmm.predict(q_in_att)
+        assignment_arr = self._rearrange_array(assignment_arr)
+  
+        postProb = self.postLogProb(q_in)
+        
+        plot_gmm(q_in, index_list, assignment_arr, interp=False)
+
+        return assignment_arr, postProb
+
+
+
+    def _return_normal_class(self, assignment_arr):
         """
         Return normal_class: 
             Assuming one distribution if only q_list is given;
@@ -64,7 +84,7 @@ class gmm:
         q_normal_list = [] 
 
         for k in range(self.K):
-            q_k      = [q for index, q in enumerate(self.q_in) if self.assignment_arr[index]==k] 
+            q_k      = [q for index, q in enumerate(self.q_in) if assignment_arr[index]==k] 
             q_k_mean = quat_mean(q_k)
 
     
@@ -175,7 +195,7 @@ class gmm:
                 }
             )
         
-        dual_gmm = gmm(self.q_in, self.q_att, self.index_list, self.K_init)
+        dual_gmm = gmm(self.q_in, self.q_att, self.K_init)
         dual_gmm.K = K_dual
         dual_gmm.Prior = Prior_dual
         dual_gmm.q_normal_list = q_normal_list_dual

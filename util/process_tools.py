@@ -81,38 +81,45 @@ def _smooth(q_in, q_att, index_list, opt):
 
 def _filter(q_in, index_list):
 
+    max_threshold = 0.01
+
     q_new = []
     q_out = []
     index_list_new = []
 
     for l in range(len(index_list)):
-        if l == 0:
-            index_list_l = np.array([0])
-        else:
-            index_list_l = np.array([index_list_new[l-1][-1]+1]) # Add 1 onto the last point of the previous traj
+        # if l == 0:
+        #     index_list_l = np.array([0])
+        # else:
+        #     index_list_l = np.array([index_list_new[l-1][-1]+1]) # Add 1 onto the last point of the previous traj
+        
 
-        q_in_l  = [q_in[idx] for idx in index_list[l]]
 
-        N = len(q_in_l)
+        # q_in_l  = [q_in[idx] for idx in index_list[l]]
 
-        max_threshold = 0.01
+        # N = len(q_in_l)
+        N = index_list[l].shape[0]
 
-        threshold = max_threshold * np.ones((N, ))
+
+        # threshold = max_threshold * np.ones((N, ))
         threshold = np.linspace(max_threshold, 0, num=N, endpoint=True)
 
-        q_new.append(q_in_l[0])
+        q_new.append(q_in[index_list[l][0]])
+        index_list_l = [index_list[l][0]]
+
         for i in np.arange(1, N):
             q_curr = q_new[-1]
-            q_next = q_in_l[i]
+            q_next = q_in[index_list[l][i]]
             dis    = q_next * q_curr.inv()
             if np.linalg.norm(dis.as_rotvec()) < threshold[i]:
                 pass
             else:
                 q_new.append(q_next)
                 q_out.append(q_next)
-                index_list_l = np.append(index_list_l, index_list_l[-1]+1)
+                # index_list_l = np.append(index_list_l, index_list_l[-1]+1)
+                index_list_l.append(index_list[l][i])
         q_out.append(q_out[-1])
-        index_list_new.append(index_list_l)
+        index_list_new.append(np.array(index_list_l))
 
     return q_new, q_out, index_list_new
 
@@ -126,7 +133,7 @@ def pre_process(q_in_raw, index_list, opt="savgol"):
     q_in                    = _smooth(q_in, q_att, index_list, opt)
     # plot_tools.plot_demo(q_in, index_list, interp=False, title='q_smooth')
 
-    q_in, q_out, index_list = _filter(q_in, index_list)
+    _, q_out, index_list = _filter(q_in, index_list)
     # plot_tools.plot_demo(q_in, index_list, interp=True, title='q_filter')
     
 

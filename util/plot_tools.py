@@ -11,23 +11,30 @@ def _interp_index_list(q_list, index_list, interp=True):
 
     # if interp=False, then no interpolation is needed, just need to 
     # make sure each traj starting at 0 and ending at N
-    index_list_interp = [np.ones((1, ))] * L
+    index_list_interp = []
 
-    if interp == False:
-        N = index_list[0].shape[0]
+    if interp == True:
         for l in range(L):
-            index_list_interp[l] = np.arange(0, N)
+            if l != L-1:
+                N = index_list[l+1][0] - index_list[l][0] 
+            else:
+                N = len(q_list) - index_list[l][0]
+            index_list_interp.append(np.arange(0, N))
 
-    elif interp == True:
-        ref = index_list[0]
-        for l in np.arange(1, L):
-            if index_list[l].shape[0] > ref.shape[0]:
-                ref = index_list[l]
-        N = ref[-1]
-
+    elif interp == False:
         for l in range(L):
-            index_list_interp[l] =np.linspace(0, N, num=index_list[l].shape[0], endpoint=True, dtype=int)
+            index_list_interp.append(index_list[l] - index_list[l][0])
 
+
+            # if l != L-1:
+            #     N = index_list[l+1][0] - index_list[l][0] 
+            # else:
+            #     N = len(q_list) - index_list[l][0]
+            # index_list_interp.append(np.arange(0, N))
+
+    # for l in range(L):
+    # #     index_list_interp[l] =np.linspace(0, N, num=index_list[l].shape[0], endpoint=True, dtype=int)
+    #     index_list_interp.append(index_list[l] - index_list[l][0])
         
     index_list_interp = np.hstack(index_list_interp)
 
@@ -161,7 +168,7 @@ def animate_rotated_axes(R_list, scale=1, **argv):
     plt.show()
 
 
-def plot_gmm(q_list, index_list, label):
+def plot_gmm(q_list, index_list, label, interp):
 
     colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
     "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
@@ -170,7 +177,7 @@ def plot_gmm(q_list, index_list, label):
     ax = fig.add_subplot()
     ax.figure.set_size_inches(12, 6)
 
-    index_list_interp = _interp_index_list(q_list, index_list, interp=True)
+    index_list_interp = _interp_index_list(q_list, index_list, interp)
 
     color_mapping = np.take(colors, label)
 
