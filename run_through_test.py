@@ -19,6 +19,8 @@ for opt in opt_list:
 
         quat_ds = quat_ds_class(q_in, q_out, q_att, index_list, K_init=4)
         quat_ds.begin()
+        
+        q_init = R.from_quat(-q_init.as_quat())
 
 
         q_test, w_test = quat_ds.sim(q_init)

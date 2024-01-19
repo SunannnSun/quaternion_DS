@@ -52,6 +52,9 @@ class quat_ds:
         To-do:
             Control the scale of displacement by setting a celling and floor 
         """    
+
+
+        q_init = self._rectify(q_init)
         
         N = len(self.index_list) + 500
         K = self.K
@@ -78,3 +81,24 @@ class quat_ds:
         
         
         return q_test, w_test
+    
+
+    def _rectify(self, q_init):
+        
+        """
+        Rectify q_init if it lies on the unmodeled half of the quaternion space
+        """
+        dual_gmm = self.gmm._dual_gmm()
+        w_init = dual_gmm.postLogProb(q_init).T
+
+        # plot_tools.plot_gmm_prob(w_train, title="GMM Posterior Probability of Original Data")
+
+        index_of_largest = np.argmax(w_init)
+
+        if index_of_largest <= (dual_gmm.K/2 - 1):
+            return q_init
+        else:
+            return R.from_quat(-q_init.as_quat())
+
+
+        

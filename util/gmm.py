@@ -7,6 +7,7 @@ from sklearn.mixture import BayesianGaussianMixture
 from .quat_tools import *
 from .plot_tools import *
 
+
 class gmm:
     def __init__(self, q_in, q_att, index_list, K_init):
         self.q_in     = q_in
@@ -36,7 +37,7 @@ class gmm:
 
         self.assignment_arr = assignment_arr 
         self.K = int(assignment_arr.max()+1)
-        self._return_norma_class()
+        self._return_normal_class()
 
         plot_gmm(self.q_in, self.index_list, assignment_arr)
 
@@ -44,7 +45,7 @@ class gmm:
 
 
 
-    def _return_norma_class(self):
+    def _return_normal_class(self):
         """
         Return normal_class: 
             Assuming one distribution if only q_list is given;
@@ -64,8 +65,6 @@ class gmm:
 
         for k in range(self.K):
             q_k      = [q for index, q in enumerate(self.q_in) if self.assignment_arr[index]==k] 
-            # r_k      = R.from_quat([q.as_quat() for q in q_k])
-            # q_k_mean = r_k.mean()
             q_k_mean = quat_mean(q_k)
 
     
@@ -76,8 +75,9 @@ class gmm:
 
             q_normal_list.append(
                 {
-                    "prior" : Prior[k],
+                    # "prior" : Prior[k],
                     "mu"    : Mu[k],
+                    "sigma" : Sigma[k],
                     "rv"    : multivariate_normal(np.zeros((self.M, )), Sigma[k], allow_singular=True)
                 }
             )
@@ -105,7 +105,7 @@ class gmm:
 
 
         for k in range(self.K):
-            _, mu_k, normal_k = tuple(self.q_normal_list[k].values())
+            mu_k, _, normal_k = tuple(self.q_normal_list[k].values())
 
             q_list_k = riem_log(mu_k, q_list)
 
@@ -136,5 +136,52 @@ class gmm:
 
 
         return postProb
+    
+    
+
+    def _dual_gmm(self):
+
+        """
+        Double the normal list and the priors
+        """
+
+        K_dual = self.K * 2
+        Prior_dual   = [0] * K_dual
+        q_normal_list_dual = [] 
+
+        for k in range(int(K_dual/2)):      
+            Prior_dual[k]  = self.Prior[k] / 2
+            Mu, Sigma, _ = tuple(self.q_normal_list[k].values())
+    
+            q_normal_list_dual.append(
+                {
+                    "mu"    : Mu,
+                    "sigma" : Sigma,
+                    "rv"    : multivariate_normal(np.zeros((self.M, )), Sigma, allow_singular=True)
+                }
+            )
+
+        for k in np.arange(int(K_dual/2), K_dual):          
+            k_prev = k - int(K_dual/2)
+            Prior_dual[k]  = Prior_dual[k_prev]
+            Mu, Sigma, _ = tuple(self.q_normal_list[k_prev].values())
+            Mu     =  R.from_quat(-Mu.as_quat())
+
+            q_normal_list_dual.append(
+                {
+                    "mu"    : Mu,
+                    "sigma" : Sigma,
+                    "rv"    : multivariate_normal(np.zeros((self.M, )), Sigma, allow_singular=True)
+                }
+            )
+        
+        dual_gmm = gmm(self.q_in, self.q_att, self.index_list, self.K_init)
+        dual_gmm.K = K_dual
+        dual_gmm.Prior = Prior_dual
+        dual_gmm.q_normal_list = q_normal_list_dual
+
+        return dual_gmm
+
+
 
 
