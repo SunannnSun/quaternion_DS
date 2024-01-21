@@ -24,7 +24,7 @@ class gmm:
         gmm = BayesianGaussianMixture(n_components=K_init, n_init=1, random_state=2).fit(q_in_att)
 
         assignment_arr = gmm.predict(q_in_att)
-        assignment_arr = self._rearrange_array_fit(assignment_arr)
+        self.assignment_arr = self._rearrange_array_fit(assignment_arr)
 
         self.K = int(assignment_arr.max()+1)
         self._return_normal_class(assignment_arr)
@@ -40,7 +40,8 @@ class gmm:
 
         postProb = self.postLogProb(q_in)
         
-        plot_gmm(q_in, index_list, assignment_arr, interp=True)
+        # plot_gmm(q_in, index_list, assignment_arr, interp=True)
+        plot_gmm(self.q_in, index_list, self.assignment_arr, interp="Full")
 
         return postProb
 

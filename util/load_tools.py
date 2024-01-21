@@ -47,7 +47,10 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
 
     q_in  = [R.identity()] * N_tot
     
+    p_in = np.zeros((N_tot, 3))
     for l in range(num_traj):
+        p_in[l*N : (l+1)*N, :] = data[l, :, :3]
+
         data_ori = np.zeros((N, 4))
 
         w        = data[l, :, 3 ].copy()
@@ -59,5 +62,5 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
 
     index_list = [np.arange(l*N, (l+1)*N) for l in range(num_traj)]
     
-    return q_in, index_list
+    return q_in, p_in, index_list
 
