@@ -47,9 +47,10 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
 
     q_in  = [R.identity()] * N_tot
     
-    p_in = np.zeros((N_tot, 3))
+    p_in = [np.zeros((3, N))] * num_traj
+
     for l in range(num_traj):
-        p_in[l*N : (l+1)*N, :] = data[l, :, :3]
+        p_in[l] = data[l, :, :3].T
 
         data_ori = np.zeros((N, 4))
 

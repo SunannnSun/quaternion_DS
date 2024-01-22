@@ -113,13 +113,13 @@ def _filter(q_in, index_list):
 def pre_process(q_in_raw, index_list, opt="savgol"):
 
     q_in, q_att             = _shift(q_in_raw, index_list)
-    # plot_tools.plot_demo(q_in, index_list, interp=False, title="shifted demonstration")
+    plot_tools.plot_demo(q_in, index_list, interp="Full", title="shifted demonstration")
     
     q_in                    = _smooth(q_in, q_att, index_list, opt)
-    # plot_tools.plot_demo(q_in, index_list, interp=False, title='q_smooth')
+    plot_tools.plot_demo(q_in, index_list, interp="Full", title='q_smooth')
 
-    q_out, index_list = _filter(q_in, index_list)
-    # plot_tools.plot_demo(q_in, index_list, interp=True, title='q_filter')
+    q_out, index_list       = _filter(q_in, index_list)
+    # plot_tools.plot_demo(q_in, index_list, interp=False, title='q_filter')
     
 
     q_init = [q_in[index_list[l][0]]  for l in range(len(index_list))]

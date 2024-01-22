@@ -5,3 +5,7 @@ __pycache__/
 
 env3.8
 venv
+
+
+damm_lpvds/
+output.json

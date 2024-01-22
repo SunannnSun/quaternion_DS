@@ -13,7 +13,7 @@ opt_list = ["slerp", "savgol"]
 for opt in opt_list:
     for i in range(4):
 
-        q_in, _,  index_list         = load_tools.load_clfd_dataset(task_id=i, num_traj=1, sub_sample=1)
+        q_in, _,  index_list                    = load_tools.load_clfd_dataset(task_id=i, num_traj=9, sub_sample=1)
         q_in, q_out, q_init, q_att, index_list  = process_tools.pre_process(q_in, index_list, opt=opt)
 
 
