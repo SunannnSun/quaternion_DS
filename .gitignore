@@ -9,3 +9,5 @@ venv
 
 damm_lpvds/
 output.json
+
+position.npy

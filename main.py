@@ -9,7 +9,7 @@ from util import plot_tools, traj_generator, quat_tools, load_tools, process_too
 
 
 """####### LOAD AND PROCESS DATA ########"""
-q_in, p_in, index_list                  = load_tools.load_clfd_dataset(task_id=2, num_traj=9, sub_sample=1)
+q_in, p_in, index_list                  = load_tools.load_clfd_dataset(task_id=2, num_traj=1, sub_sample=1)
 q_in, q_out, q_init, q_att, index_list  = process_tools.pre_process(q_in, index_list, opt= "slerp")
 
 
@@ -23,9 +23,15 @@ q_init = R.from_quat(-q_init.as_quat())
 q_test, w_test = quat_ds.sim(q_init)
 
 
-# """############ PLOT RESULTS #############"""
+"""############ PLOT RESULTS #############"""
 
 plot_tools.plot_quat(q_test, title='q_test')
 plot_tools.plot_gmm_prob(w_test, title="GMM Posterior Probability of Reproduced Data")
 
+plot_tools.plot_reference_trajectories_DS(p_in)
+
+
 plt.show()
+
+
+np.save("position", p_in)

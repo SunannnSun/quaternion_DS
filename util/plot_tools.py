@@ -309,35 +309,17 @@ def plot_gmm_prob(w_arr, **argv):
 
 
 
+def plot_reference_trajectories_DS(Data):
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(projection='3d')
+    for l in range(len(Data)):
+        ax.plot(Data[l][0], Data[l][1], Data[l][2], 'ro', markersize=1.5)
+    # ax.scatter(att[0], att[1], att[2], s=200, c='blue', alpha=0.5)
+    ax.axis('auto')
+    ax.set_title('Reference Trajectory')
+    ax.set_xlabel(r'$\xi_1(m)$')
+    ax.set_ylabel(r'$\xi_2(m)$')
+    ax.set_zlabel(r'$\xi_3(m)$')
 
 
-if __name__ == "__main__":
-
-    
-    r0 = R.identity()
-    r1 = R.from_euler("ZYX", [90, -30, 0], degrees=True)  # intrinsic
-    r2 = R.from_euler("zyx", [90, -30, 0], degrees=True)  # extrinsic
-    r_list = [r0, r1, r2]
-
-
-
-    # fig = plt.figure()
-    # ax = fig.add_subplot(projection="3d", proj_type="ortho")
-    # # ax.figure.set_size_inches(10, 8)
-    # # ax.set(xlim=(-2, 2), ylim=(-2, 2), zlim=(-2, 2))
-    # # ax.set_aspect("equal", adjustable="box")
-    # # plot_sequence_rotated_axes(ax, r_list)
-
-    # ax.set(xlim=(-1.25, 7.25), ylim=(-1.25, 1.25), zlim=(-1.25, 1.25))
-    # ax.set(xticks=range(-1, 8), yticks=[-1, 0, 1], zticks=[-1, 0, 1])
-    # ax.set_aspect("equal", adjustable="box")
-    # ax.figure.set_size_inches(6, 5)
-    # plt.tight_layout()
-    # plt.show()
-
-    plot_rotated_axes_sequence(r_list)
-
-    # animate_rotated_axes(ax, r_list)
-
-    # plot_rotated_axes(ax, r1)
-
+    plt.show()
