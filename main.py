@@ -20,7 +20,7 @@ quat_ds.begin()
 
 q_init = R.from_quat(-q_init.as_quat())
 
-q_test, w_test = quat_ds.sim(q_init)
+q_test, w_test = quat_ds.sim(q_init, dt=0.1)
 
 
 """############ PLOT RESULTS #############"""
@@ -33,5 +33,9 @@ plot_tools.plot_reference_trajectories_DS(p_in)
 
 plt.show()
 
+"""############ OUTPUT RESULTS #############"""
 
-np.save("position", p_in)
+# np.save("p_in", p_in)
+# q_in_arr = np.array([q.as_quat() for q in q_in])
+# np.save("q_in", q_in_arr)
+

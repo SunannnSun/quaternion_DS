@@ -314,7 +314,7 @@ def plot_reference_trajectories_DS(Data):
     ax = fig.add_subplot(projection='3d')
     for l in range(len(Data)):
         ax.plot(Data[l][0], Data[l][1], Data[l][2], 'ro', markersize=1.5)
-    # ax.scatter(att[0], att[1], att[2], s=200, c='blue', alpha=0.5)
+    # ax.scatter(Data[0], Data[1], Data[2], s=200, c='blue', alpha=0.5)
     ax.axis('auto')
     ax.set_title('Reference Trajectory')
     ax.set_xlabel(r'$\xi_1(m)$')
@@ -322,4 +322,3 @@ def plot_reference_trajectories_DS(Data):
     ax.set_zlabel(r'$\xi_3(m)$')
 
 
-    plt.show()

@@ -6,6 +6,19 @@ from util.quat_tools import *
 from util.gmm import gmm as gmm_class   
 
 
+def compute_ang_vel(q_k, q_kp1, dt=0.1):
+    """
+    Compute angular velocity in q_k frame to rotate q_k into q_kp1 given known time difference
+    """
+
+    dq = q_k.inv() * q_kp1
+
+    dq = dq.as_rotvec()
+
+    w  = 2 * dq / dt
+
+    return w
+
 
 
 class quat_ds:
@@ -26,6 +39,10 @@ class quat_ds:
             for idx in index_list[l]:
                 q_new.append(q_in[idx])
         self.q_new = q_new
+
+
+        self.tol = 10E-3
+        self.max_iter = 10000
     
 
     def _cluster(self):
@@ -57,36 +74,49 @@ class quat_ds:
             q_test: List of Rotation objects
             w_test: Array of weights (N by K)
         
-        To-do:
-            Control the scale of displacement by setting a celling and floor 
+        Parameters:
+            w_out: the output angular velocity
+         
         """    
 
         q_init = self._rectify(q_init)
         
-        N = len(self.index_list) + 500
         K = self.K
         A = self.A
         q_att = self.q_att
         gmm   = self.gmm
         
         q_test = [q_init]
-        w_test = np.zeros((N, K))      
-        for i in range(N):
+        w_test = []
+
+        i = 0
+        while np.linalg.norm((q_test[-1] * self.q_att.inv()).as_rotvec()) >= self.tol:
+            if i > self.max_iter:
+                print("Simulation failed: exceed max iteration")
+                sys.exit(0)
+
             q_in      = q_test[i]
             q_in_att  = riem_log(q_att, q_in)
             q_out_att = np.zeros((4, 1))
 
-            w_test[i, :] = gmm.postLogProb(q_in).T
+            w_k = gmm.postLogProb(q_in)
             for k in range(K):
-                q_out_att += w_test[i, k] * A[k] @ q_in_att.reshape(-1, 1)
+                q_out_att += w_k[k, 0] * A[k] @ q_in_att.reshape(-1, 1)
 
             q_out_body = parallel_transport(q_att, q_in, q_out_att.T)
             q_out_q    = riem_exp(q_in, q_out_body) 
             q_out      = R.from_quat(q_out_q.reshape(4,))
+
+            w_out      = compute_ang_vel(q_in, q_out, dt)
+            q_next     = q_in * R.from_rotvec(w_out * dt)
+
             
-            q_test.append(q_out)
-        
-        return q_test, w_test
+            q_test.append(q_next)        
+            w_test.append(w_k[:, 0])
+
+            i += 1
+
+        return q_test, np.array(w_test)
     
 
     def _rectify(self, q_init):

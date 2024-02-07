@@ -10,4 +10,5 @@ venv
 damm_lpvds/
 output.json
 
-position.npy
+p_in.npy
+q_test.np
