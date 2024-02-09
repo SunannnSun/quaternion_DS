@@ -246,11 +246,14 @@ def riem_exp(x, v):
     return y
 
 
-def riem_cov(q_mean, q_list):
 
+
+
+def riem_cov(q_mean, q_list):
 
     q_list_mean = riem_log(q_mean, q_list)
     scatter = q_list_mean.T @ q_list_mean
+
 
     cov = scatter/len(q_list)
 

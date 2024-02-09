@@ -28,6 +28,9 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     """
     Solely used to load the raw dataset
 
+    Return:
+        p_out: N by 3 np.array 
+
     Note:
         [num_demos=9, trajectory_length=1000, data_dimension=7] 
         A data point consists of 7 elements: px,py,pz,qw,qx,qy,qz (3D position followed by quaternions in the scalar first format).
@@ -47,10 +50,9 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
 
     q_in  = [R.identity()] * N_tot
     
-    p_in = [np.zeros((3, N))] * num_traj
+    p_in = np.zeros((N_tot, 3))
 
     for l in range(num_traj):
-        p_in[l] = data[l, :, :3].T
 
         data_ori = np.zeros((N, 4))
 
@@ -61,7 +63,10 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
 
         q_in[l*N: (l+1)*N] = [R.from_quat(q) for q in data_ori.tolist()]
 
+        p_in[l*N: (l+1)*N, :] = data[l, :, :3]
+
+
     index_list = [np.arange(l*N, (l+1)*N) for l in range(num_traj)]
     
-    return q_in, p_in, index_list
+    return p_in, q_in, index_list
 

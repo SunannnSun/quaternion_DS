@@ -3,7 +3,7 @@ from scipy.spatial.transform import Rotation as R
 
 from util import optimize_tools, plot_tools
 from util.quat_tools import *
-from util.gmm import gmm as gmm_class   
+from util.gmm_coupled import gmm as gmm_class   
 
 
 def compute_ang_vel(q_k, q_kp1, dt=0.1):
@@ -22,7 +22,8 @@ def compute_ang_vel(q_k, q_kp1, dt=0.1):
 
 
 class quat_ds:
-    def __init__(self, q_in, q_out, q_att, index_list, K_init) -> None:
+    def __init__(self, p_in, q_in, q_out, q_att, index_list, K_init) -> None:
+        self.p_in  = p_in
         self.q_in  = q_in
         self.q_out = q_out
         self.q_att = q_att
@@ -34,22 +35,25 @@ class quat_ds:
         """
         Mapping q_in to index_list
         """
+        p_new = []
         q_new = []
         for l in range(len(index_list)):
             for idx in index_list[l]:
+                p_new.append(p_in[idx, :])
                 q_new.append(q_in[idx])
-        self.q_new = q_new
+        self.p_new =  np.array(p_new)
+        self.q_new =  q_new
 
 
         self.tol = 10E-3
-        self.max_iter = 10000
+        self.max_iter = 5000
     
 
     def _cluster(self):
-        gmm = gmm_class(self.q_in, self.q_att)
+        gmm = gmm_class(self.p_in, self.q_in, self.q_att)
         gmm.fit(self.K_init)
 
-        self.postProb = gmm.predict(self.q_new, self.index_list)
+        self.postProb = gmm.predict(self.p_new, self.q_new, self.index_list)
         self.K        = gmm.K
         self.gmm      = gmm
         
@@ -63,7 +67,7 @@ class quat_ds:
         self._optimize()
 
 
-    def sim(self, q_init, dt=0.1):
+    def sim(self, p_init, q_init, dt=0.1):
         """
         Forward simulation given an initial point
 
@@ -79,7 +83,7 @@ class quat_ds:
          
         """    
 
-        q_init = self._rectify(q_init)
+        q_init = self._rectify(p_init, q_init)
         
         K = self.K
         A = self.A
@@ -93,13 +97,16 @@ class quat_ds:
         while np.linalg.norm((q_test[-1] * self.q_att.inv()).as_rotvec()) >= self.tol:
             if i > self.max_iter:
                 print("Simulation failed: exceed max iteration")
-                sys.exit(0)
+                return q_test, np.array(w_test)
+                # sys.exit(0)
+
+            p_in = p_init
 
             q_in      = q_test[i]
             q_in_att  = riem_log(q_att, q_in)
             q_out_att = np.zeros((4, 1))
 
-            w_k = gmm.postLogProb(q_in)
+            w_k = gmm.postLogProb(p_in, q_in)
             for k in range(K):
                 q_out_att += w_k[k, 0] * A[k] @ q_in_att.reshape(-1, 1)
 
@@ -118,13 +125,13 @@ class quat_ds:
         return q_test, np.array(w_test)
     
 
-    def _rectify(self, q_init):
+    def _rectify(self, p_init, q_init):
         
         """
         Rectify q_init if it lies on the unmodeled half of the quaternion space
         """
         dual_gmm = self.gmm._dual_gmm()
-        w_init = dual_gmm.postLogProb(q_init).T
+        w_init = dual_gmm.postLogProb(p_init, q_init).T
 
         # plot_tools.plot_gmm_prob(w_init, title="GMM Posterior Probability of Original Data")
 
