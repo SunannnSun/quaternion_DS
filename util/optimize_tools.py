@@ -1,8 +1,8 @@
 import numpy as np
 import cvxpy as cp
 
-from util.quat_tools import *
-from util.plot_tools import *
+from .quat_tools import *
+from .plot_tools import *
 
 
 

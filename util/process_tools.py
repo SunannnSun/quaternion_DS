@@ -5,10 +5,10 @@ from scipy.spatial.transform import Slerp
 from scipy.spatial.transform import Rotation as R
 from scipy.signal import savgol_filter
 
-from util import plot_tools, optimize_tools, quat_tools
-from util.gmm import gmm as gmm_class
-from util.quat_tools import *
-from util.plot_tools import *
+from . import plot_tools, optimize_tools, quat_tools
+from .gmm import gmm as gmm_class
+from .quat_tools import *
+from .plot_tools import *
 
 
 
