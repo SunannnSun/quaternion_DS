@@ -12,8 +12,6 @@ from util import plot_tools, traj_generator, quat_tools, load_tools, process_too
 p_in, q_in, index_list                  = load_tools.load_clfd_dataset(task_id=2, num_traj=1, sub_sample=1)
 q_in, q_out, q_init, q_att, index_list  = process_tools.pre_process(q_in, index_list, opt= "slerp")
 
-
-
 """############ PERFORM QUAT-DS ############"""
 
 quat_ds = quat_ds_class(q_in, q_out, q_att, index_list, K_init=4)
