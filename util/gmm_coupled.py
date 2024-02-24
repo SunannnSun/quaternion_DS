@@ -116,7 +116,26 @@ class gmm:
 
         self.Prior = Prior
         self.q_normal_list = q_normal_list
+    
 
+    def return_param(self):
+        K = self.K
+        M = self.M 
+
+        Priors = np.zeros((K, ))
+        Mu     = np.zeros((K, M))
+        Sigma  = np.zeros((K, M, M))
+
+        q_normal_list = self.q_normal_list
+
+        for k in range(K):
+            Priors[k] = self.Prior[k]
+            Mu[k, :3] = q_normal_list[k]["mu"][0]
+            Mu[k, 3:] = q_normal_list[k]["mu"][1].as_quat()
+            Sigma[k, :, :] = q_normal_list[k]["sigma"]
+
+
+        return Priors, Mu, Sigma
 
 
 

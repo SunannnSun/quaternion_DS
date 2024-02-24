@@ -1,3 +1,4 @@
+import os, sys, json
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
@@ -136,4 +137,27 @@ class quat_ds:
             return R.from_quat(-q_init.as_quat())
 
 
+
+    def logOut(self):
+        js_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'output_ori.json')
+
+        # with open(js_path, 'r') as f:
+        #     data = json.load(f)
         
+        Priors, Mu, Sigma = self.gmm.return_param()
+
+        js = {
+            "name": "quat_ds result",
+            "K": self.K,
+            "M": self.gmm.M,
+            "Priors": Priors.tolist(),
+            "Mu": Mu.ravel().tolist(),
+            "Sigma": Sigma.ravel().tolist(),
+            "A": self.A.ravel().tolist(),
+            "att": self.q_att.as_quat().tolist()
+        }
+
+        with open(js_path, "w") as f:
+            json.dump(js, f, indent=4)
+    
+        pass       
