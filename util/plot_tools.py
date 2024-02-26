@@ -323,8 +323,8 @@ def plot_gmm_prob(w_arr, **argv):
 
 
 
-def plot_reference_trajectories_DS(p_in, q_in):
-    sub_sample = 3
+def plot_pose(p_in, p_out, q_out):
+    sub_sample = 1
 
     # a = Data[0][0]
 
@@ -332,37 +332,53 @@ def plot_reference_trajectories_DS(p_in, q_in):
     ax = fig.add_subplot(projection='3d')
 
 
-    ax.plot(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], 'o', color='gray', markersize=1.5)
+    ax.plot(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], 'o', color='gray', alpha=0.2, markersize=1.5, label="Demonstration")
+    ax.plot(p_out[:, 0], p_out[:, 1], p_out[:, 2], 'o', color='k',  markersize=1.5, label = "Reproduction")
+
+    # ax.plot(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], color='gray', alpha=0.3, label="Demonstration")
+    # ax.plot(p_out[:, 0], p_out[:, 1], p_out[:, 2],  color='k', label = "Reproduction")
 
 
 
+    ax.scatter(p_out[0, 0], p_out[0, 1], p_out[0, 2], 'o', facecolors='none', edgecolors='magenta',linewidth=2,  s=100, label="Initial")
+    ax.scatter(p_out[-1, 0], p_out[-1, 1], p_out[-1, 2], marker=(8, 2, 0), color='k',  s=100, label="Target")
+
+    ax.legend(ncol=4, loc="upper center")
 
     colors = ("#FF6666", "#005533", "#1199EE")  # Colorblind-safe RGB
-    scale = 5
+    colors = ("r", "g", "b")  # Colorblind-safe RGB
 
-    for i in np.linspace(0, len(q_in), num=15, endpoint=False, dtype=int):
 
-        r = q_in[i]
-        loc = p_in[i, :]
+    scale = 0.035
+
+    for i in np.linspace(0, p_out.shape[0], num=30, endpoint=False, dtype=int):
+
+        r = q_out[i]
+        loc = p_out[i, :]
         for j, (axis, c) in enumerate(zip((ax.xaxis, ax.yaxis, ax.zaxis),
                                             colors)):
             line = np.zeros((2, 3))
             line[1, j] = scale
             line_rot = r.apply(line)
             line_plot = line_rot + loc
-            ax.plot(line_plot[:, 0], line_plot[:, 1], line_plot[:, 2], c)
+            ax.plot(line_plot[:, 0], line_plot[:, 1], line_plot[:, 2], c, linewidth=1)
 
 
 
     # ax.scatter(Data[0], Data[1], Data[2], s=200, c='blue', alpha=0.5)
-    ax.axis('auto')
-    ax.set_title('Reference Trajectory')
-    ax.set_xlabel(r'$\xi_1(m)$')
-    ax.set_ylabel(r'$\xi_2(m)$')
-    ax.set_zlabel(r'$\xi_3(m)$')
+    ax.axis('equal')
+    # ax.set_title('Reference Trajectory')
+    ax.set_xlabel(r'$\xi_1(m)$', labelpad=20)
+    ax.set_ylabel(r'$\xi_2(m)$', labelpad=20)
+    ax.set_zlabel(r'$\xi_3(m)$', labelpad=20)
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=4))
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=4))
+    ax.zaxis.set_major_locator(MaxNLocator(nbins=4))
+
     ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+
 
 
 def plot_train_test(q_train, index_list, q_test, **argv):
@@ -412,8 +428,6 @@ def plot_train_test(q_train, index_list, q_test, **argv):
 
 
 
-
-
     if "title" in argv:
             axs[0].set_title(argv["title"])
 
@@ -445,7 +459,7 @@ def plot_train_test_4d(q_train, index_list, q_test, **argv):
         q_l = q_list_q[index_list[l], :]
         for k in range(4):
             # ax.scatter(index_list_interp, q_list_q[:, k], s=1, c=color_mapping)
-            ax.plot(index_list_interp[l], q_l[:, k], linewidth=1, color=colors[k], alpha=0.3, label = label_list[k])
+            ax.plot(index_list_interp[l], q_l[:, k], linewidth=1, color=colors[k], alpha=0.3)
         # if l == 0:
             # ax.legend(loc="upper left")
             # ax.grid(True)
@@ -475,6 +489,7 @@ def plot_train_test_4d(q_train, index_list, q_test, **argv):
 
     for k in range(4):
         ax.plot(idx, q_test_q[:, k], color=colors[k],linewidth=2, label = label_list[k])
+    ax.legend(ncol=4, loc="best")
 
 
     plt.savefig('quaternion.png', dpi=600)
