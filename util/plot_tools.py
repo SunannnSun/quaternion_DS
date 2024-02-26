@@ -1,12 +1,22 @@
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import FormatStrFormatter
 from scipy.spatial.transform import Rotation as R
 from .quat_tools import *
 import random
+from dtw import dtw
 
 
-def _interp_index_list(q_list, index_list, interp=True):
+font = {'family' : 'Times New Roman',
+         'size'   : 18
+         }
+
+mpl.rc('font', **font)
+
+def _interp_index_list(q_list, index_list, interp=True, arr=True):
     L = len(index_list)
 
     index_list_interp = []
@@ -21,6 +31,9 @@ def _interp_index_list(q_list, index_list, interp=True):
         for l in range(L):
             index_list_interp.append(np.linspace(0, N, num=index_list[l].shape[0], endpoint=True, dtype=int))
 
+        if arr==False:
+            return index_list_interp
+
     elif interp == False:
         for l in range(L):
             index_list_interp.append(index_list[l] - index_list[l][0])
@@ -32,6 +45,7 @@ def _interp_index_list(q_list, index_list, interp=True):
             else:
                 N = len(q_list) - index_list[l][0]
             index_list_interp.append(np.arange(0, N))
+            
 
     return np.hstack(index_list_interp)
 
@@ -322,3 +336,123 @@ def plot_reference_trajectories_DS(Data):
     ax.set_zlabel(r'$\xi_3(m)$')
 
 
+
+def plot_train_test(q_train, index_list, q_test, **argv):
+
+    label_list = ['x', 'y', 'z', 'w']
+    colors = ['red', 'blue', 'lime', 'magenta']
+    # colors = ['lightblue', 'lightgreen', 'lightcoral', 'lightsalmon']
+    
+    fig, axs = plt.subplots(4, 1, figsize=(14, 6))
+
+    q_list_q = list_to_arr(q_train)
+
+    index_list_interp = _interp_index_list(q_train, index_list, interp=True, arr=False)
+
+
+    q_list_q = list_to_arr(q_train)
+    L = len(index_list_interp)
+    for l in range(L):
+        q_l = q_list_q[index_list[l], :]
+        for k in range(4):
+            # ax.scatter(index_list_interp, q_list_q[:, k], s=1, c=color_mapping)
+            axs[k].plot(index_list_interp[l], q_l[:, k], '--', color=colors[k], alpha=0.3, label = label_list[k])
+            if l == 0:
+                axs[k].legend(loc="upper left")
+            # axs[k].grid(True)
+            axs[k].yaxis.set_major_locator(MaxNLocator(nbins=2))
+            # axs[k].set_ylabel(label_list[k])
+
+
+
+    for ax in axs[:-1]:
+        ax.xaxis.set_visible(False)
+
+
+
+    N = index_list_interp[0][-1]
+
+    q_test_q = list_to_arr(q_test)
+
+
+    idx = np.linspace(0, N, num=q_test_q.shape[0], endpoint=True, dtype=int)
+
+
+    for k in range(4):
+        axs[k].plot(idx, q_test_q[:, k], color=colors[k], label = label_list[k])
+
+
+
+
+
+
+    if "title" in argv:
+            axs[0].set_title(argv["title"])
+
+
+
+
+
+
+
+def plot_train_test_4d(q_train, index_list, q_test, **argv):
+
+    label_list = ['x', 'y', 'z', 'w']
+    colors = ['red', 'blue', 'lime', 'magenta']
+    # colors = ['lightblue', 'lightgreen', 'lightcoral', 'lightsalmon']
+    
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    ax.figure.set_size_inches(8, 6)
+
+    q_list_q = list_to_arr(q_train)
+
+    index_list_interp = _interp_index_list(q_train, index_list, interp=True, arr=False)
+
+
+    q_list_q = list_to_arr(q_train)
+    L = len(index_list_interp)
+    
+    for l in range(L):
+        q_l = q_list_q[index_list[l], :]
+        for k in range(4):
+            # ax.scatter(index_list_interp, q_list_q[:, k], s=1, c=color_mapping)
+            ax.plot(index_list_interp[l], q_l[:, k], linewidth=1, color=colors[k], alpha=0.3, label = label_list[k])
+        # if l == 0:
+            # ax.legend(loc="upper left")
+            # ax.grid(True)
+            # ax.yaxis.set_major_locator(MaxNLocator(nbins=2))
+            # axs[k].set_ylabel(label_list[k])
+
+
+    # ax.legend(loc="upper left")
+
+
+    # ax.xaxis.set_visible(False)
+    ax.spines['top'].set_visible(False)  # Hide top border line
+    ax.spines['right'].set_visible(False)  # Hide top border line
+
+    ax.set_xlabel("Sequence Index")
+
+    ax.set_ylabel("Unit Quaternion")
+
+
+    N = index_list_interp[0][-1]
+
+    q_test_q = list_to_arr(q_test)
+
+
+    idx = np.linspace(0, N, num=q_test_q.shape[0], endpoint=True, dtype=int)
+
+
+    for k in range(4):
+        ax.plot(idx, q_test_q[:, k], color=colors[k],linewidth=2, label = label_list[k])
+
+
+    plt.savefig('quaternion.png', dpi=600)
+
+
+
+
+    # if "title" in argv:
+    #         axs[0].set_title(argv["title"])

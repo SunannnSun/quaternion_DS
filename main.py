@@ -29,6 +29,10 @@ plot_tools.plot_gmm_prob(w_test, title="GMM Posterior Probability of Reproduced 
 
 plot_tools.plot_reference_trajectories_DS(p_in)
 
+# plot_tools.plot_quat(q_in, title='q_in')
+
+plot_tools.plot_train_test(q_in, index_list)
+
 plt.show()
 
 """############ OUTPUT RESULTS #############"""
@@ -37,5 +41,5 @@ plt.show()
 # q_in_arr = np.array([q.as_quat() for q in q_in])
 # np.save("q_in", q_in_arr)
 
-quat_ds.logOut()
-print(q_init.as_quat())
+# quat_ds.logOut()
+# print(q_init.as_quat())

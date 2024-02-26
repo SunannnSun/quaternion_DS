@@ -287,3 +287,18 @@ def list_to_arr(q_list):
         # q_arr[i, :] = canonical_quat(q_list[i].as_quat())
 
     return q_arr
+
+
+def list_to_euler(q_list):
+
+    N = len(q_list)
+    M = 3
+
+    q_arr = np.zeros((N, M))
+
+    for i in range(N):
+        q_arr[i, :] = q_list[i].as_euler('xyz')
+
+        # q_arr[i, :] = canonical_quat(q_list[i].as_quat())
+
+    return q_arr

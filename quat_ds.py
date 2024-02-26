@@ -64,7 +64,7 @@ class quat_ds:
         self._optimize()
 
 
-    def sim(self, q_init, dt=0.1):
+    def sim(self, q_init, dt=0.1, if_perturb=False):
         """
         Forward simulation given an initial point
 
@@ -97,6 +97,11 @@ class quat_ds:
                 sys.exit(0)
 
             q_in      = q_test[i]
+
+            if if_perturb and i==50:
+                q_in =  R.from_rotvec([0.2, 0.1, 0.1]) * q_in
+                # q_in =  R.random() * q_in
+
             q_in_att  = riem_log(q_att, q_in)
             q_out_att = np.zeros((4, 1))
 
