@@ -323,18 +323,46 @@ def plot_gmm_prob(w_arr, **argv):
 
 
 
-def plot_reference_trajectories_DS(Data):
+def plot_reference_trajectories_DS(p_in, q_in):
+    sub_sample = 3
+
+    # a = Data[0][0]
+
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(projection='3d')
-    for l in range(len(Data)):
-        ax.plot(Data[l][0], Data[l][1], Data[l][2], 'ro', markersize=1.5)
+
+
+    ax.plot(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], 'o', color='gray', markersize=1.5)
+
+
+
+
+    colors = ("#FF6666", "#005533", "#1199EE")  # Colorblind-safe RGB
+    scale = 5
+
+    for i in np.linspace(0, len(q_in), num=15, endpoint=False, dtype=int):
+
+        r = q_in[i]
+        loc = p_in[i, :]
+        for j, (axis, c) in enumerate(zip((ax.xaxis, ax.yaxis, ax.zaxis),
+                                            colors)):
+            line = np.zeros((2, 3))
+            line[1, j] = scale
+            line_rot = r.apply(line)
+            line_plot = line_rot + loc
+            ax.plot(line_plot[:, 0], line_plot[:, 1], line_plot[:, 2], c)
+
+
+
     # ax.scatter(Data[0], Data[1], Data[2], s=200, c='blue', alpha=0.5)
     ax.axis('auto')
     ax.set_title('Reference Trajectory')
     ax.set_xlabel(r'$\xi_1(m)$')
     ax.set_ylabel(r'$\xi_2(m)$')
     ax.set_zlabel(r'$\xi_3(m)$')
-
+    ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
 
 
 def plot_train_test(q_train, index_list, q_test, **argv):
