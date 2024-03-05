@@ -178,7 +178,7 @@ def plot_gmm(q_list, index_list, label, interp):
 
     q_list_q = list_to_arr(q_list)
     for k in range(4):
-        ax.scatter(index_list_interp, q_list_q[:, k], s=1, c=color_mapping)
+        ax.scatter(index_list_interp, q_list_q[:, k], s=1, alpha=0.5, c=color_mapping)
 
     ax.set_title("GMM results")
     pass
@@ -323,20 +323,35 @@ def plot_gmm_prob(w_arr, **argv):
 
 
 
-def plot_pose(p_in, p_out, q_out):
-    sub_sample = 1
+def plot_pose(p_in, p_out, q_out, label=[]):
 
+    sub_sample = 2
+
+    colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
+    "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
+
+    color_mapping = np.take(colors, label)
+
+    
     # a = Data[0][0]
 
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(projection='3d')
 
+    if len(label) == 0:
+        ax.plot(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], 'o', color='gray', alpha=0.2, markersize=1.5, label="Demonstration")
+    else:
+        ax.scatter(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], 'o', color=color_mapping[::sub_sample], s=1, alpha=0.4, label="Demonstration")
 
-    ax.plot(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], 'o', color='gray', alpha=0.2, markersize=1.5, label="Demonstration")
-    ax.plot(p_out[:, 0], p_out[:, 1], p_out[:, 2], 'o', color='k',  markersize=1.5, label = "Reproduction")
+    """
+    Plot Scatter
+    """
+    # ax.plot(p_out[:, 0], p_out[:, 1], p_out[:, 2], 'o', color='k',  markersize=1.5, label = "Reproduction")
 
-    # ax.plot(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], color='gray', alpha=0.3, label="Demonstration")
-    # ax.plot(p_out[:, 0], p_out[:, 1], p_out[:, 2],  color='k', label = "Reproduction")
+    """
+    Plot Curve
+    """
+    ax.plot(p_out[:, 0], p_out[:, 1], p_out[:, 2],  color='k', label = "Reproduction")
 
 
 
@@ -350,24 +365,27 @@ def plot_pose(p_in, p_out, q_out):
 
 
     scale = 0.035
+    if  len(q_out) != 0:
+        for i in np.linspace(0, p_out.shape[0], num=10, endpoint=False, dtype=int):
 
-    for i in np.linspace(0, p_out.shape[0], num=30, endpoint=False, dtype=int):
-
-        r = q_out[i]
-        loc = p_out[i, :]
-        for j, (axis, c) in enumerate(zip((ax.xaxis, ax.yaxis, ax.zaxis),
-                                            colors)):
-            line = np.zeros((2, 3))
-            line[1, j] = scale
-            line_rot = r.apply(line)
-            line_plot = line_rot + loc
-            ax.plot(line_plot[:, 0], line_plot[:, 1], line_plot[:, 2], c, linewidth=1)
+            r = q_out[i]
+            loc = p_out[i, :]
+            for j, (axis, c) in enumerate(zip((ax.xaxis, ax.yaxis, ax.zaxis),
+                                                colors)):
+                line = np.zeros((2, 3))
+                line[1, j] = scale
+                line_rot = r.apply(line)
+                line_plot = line_rot + loc
+                ax.plot(line_plot[:, 0], line_plot[:, 1], line_plot[:, 2], c, linewidth=1)
 
 
 
     # ax.scatter(Data[0], Data[1], Data[2], s=200, c='blue', alpha=0.5)
     ax.axis('equal')
     # ax.set_title('Reference Trajectory')
+    ax.tick_params(axis='z', which='major', pad=10)
+
+
     ax.set_xlabel(r'$\xi_1(m)$', labelpad=20)
     ax.set_ylabel(r'$\xi_2(m)$', labelpad=20)
     ax.set_zlabel(r'$\xi_3(m)$', labelpad=20)
@@ -378,6 +396,166 @@ def plot_pose(p_in, p_out, q_out):
     ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
     ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.set_title("plot_pose")
+
+
+
+
+def plot_gmm_prob(w_arr, **argv):
+
+    N, K = w_arr.shape
+
+    fig, axs = plt.subplots(K, 1, figsize=(12, 8))
+
+    colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
+    "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
+
+    for k in range(K):
+        axs[k].scatter(np.arange(N), w_arr[:, k], s=5, color=colors[k])
+        axs[k].set_ylim([0, 1])
+        # axs[k].set_xticks(np.linspace(0, N, 6, endpoint=False, dtype=int))
+        axs[k].set_xticks([0, 25, 50, 75, 100, 125, 150, 175])
+
+
+    
+    if "title" in argv:
+        axs[0].set_title(argv["title"])
+
+
+def plot_gmm_prob_overlay(**argv):
+    dt = 10E-3
+    w = np.load('w.npy')
+    w_pert = np.load('w_perturb.npy')
+
+    K = 4
+    
+    fig, axs = plt.subplots(K, 1, figsize=(12, 11))
+
+    colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
+    "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
+
+
+    for k in range(K):
+        if k == 0:
+            axs[k].plot(np.arange(w.shape[0])*dt, w[:, k], '--', color=colors[k], linewidth=2, label="Quaternion-DS")
+        else:
+            axs[k].plot(np.arange(w.shape[0])*dt, w[:, k], '--', color=colors[k], linewidth=2)
+
+        # axs[k].set_xlim([0, 200])
+
+        axs[k].set_ylim([0, 1.1])
+        # axs[k].set_xticks(np.linspace(0, N, 6, endpoint=False, dtype=int))
+        # axs[k].set_xticks([0, 25, 50, 75, 100, 125, 150, 175])
+    
+
+    for k in range(K):
+        if k == 0:
+            axs[k].plot(np.arange(w_pert.shape[0])*dt, w_pert[:, k], color=colors[k], linewidth=2, label="SE(3) LPV-DS")
+        else:
+            axs[k].plot(np.arange(w_pert.shape[0])*dt, w_pert[:, k], color=colors[k], linewidth=2)
+
+        # axs[k].set_xlim([0, 200])
+
+        axs[k].set_ylim([0, 1.1])
+        # axs[k].set_xticks(np.linspace(0, N, 6, endpoint=False, dtype=int))
+        # axs[k].set_xticks([0, 25, 50, 75, 100, 125, 150, 175])
+
+        axs[k].set_ylabel('k = ' + str(k))
+
+    
+    axs[0].legend()
+    axs[0].set_title(r"Comparison Result of Mixing function $\gamma(\cdot)$ over Time")
+    axs[3].set_xlabel("Time (sec)")
+    plt.savefig('gmm.png', dpi=600)
+
+
+
+def plot_gmm_on_traj(p_in, q_in, gmm):
+
+    label = gmm.assignment_arr
+
+    sub_sample = 2
+
+    colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
+    "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
+
+    color_mapping = np.take(colors, label)
+
+
+    # a = Data[0][0]
+
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(projection='3d')
+
+
+    ax.scatter(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], 'o', color=color_mapping[::sub_sample], s=1, alpha=0.4, label="Demonstration")
+
+    # ax.plot(p_in[::sub_sample, 0], p_in[::sub_sample, 1], p_in[::sub_sample, 2], color='gray', alpha=0.3, label="Demonstration")
+    # ax.plot(p_out[:, 0], p_out[:, 1], p_out[:, 2],  color='k', label = "Reproduction")
+
+    # ax.scatter(p_out[0, 0], p_out[0, 1], p_out[0, 2], 'o', facecolors='none', edgecolors='magenta',linewidth=2,  s=100, label="Initial")
+    # ax.scatter(p_out[-1, 0], p_out[-1, 1], p_out[-1, 2], marker=(8, 2, 0), color='k',  s=100, label="Target")
+
+    # ax.legend(ncol=4, loc="upper center")
+
+    colors = ("#FF6666", "#005533", "#1199EE")  # Colorblind-safe RGB
+    colors = ("r", "g", "b")  # Colorblind-safe RGB
+
+
+    scale = 0.035
+
+    K = np.max(label) + 1
+
+    for k in range(K):
+        label_k =np.where(label == k)[0]
+
+        p_in_k = p_in[label_k, :]
+        loc = np.mean(p_in_k, axis=0)
+
+        r = gmm.q_normal_list[k]["mu"][1]
+        for j, (axis, c) in enumerate(zip((ax.xaxis, ax.yaxis, ax.zaxis),
+                                            colors)):
+            line = np.zeros((2, 3))
+            line[1, j] = scale
+            line_rot = r.apply(line)
+            line_plot = line_rot + loc
+            ax.plot(line_plot[:, 0], line_plot[:, 1], line_plot[:, 2], c, linewidth=1)
+
+
+
+    # for i in np.linspace(0, len(q_in), num=40, endpoint=False, dtype=int):
+
+    #     r = q_in[i]
+    #     loc = p_in[i, :]
+    #     for j, (axis, c) in enumerate(zip((ax.xaxis, ax.yaxis, ax.zaxis),
+    #                                         colors)):
+    #         line = np.zeros((2, 3))
+    #         line[1, j] = scale
+    #         line_rot = r.apply(line)
+    #         line_plot = line_rot + loc
+    #         ax.plot(line_plot[:, 0], line_plot[:, 1], line_plot[:, 2], c, linewidth=1)
+
+
+
+    # ax.scatter(Data[0], Data[1], Data[2], s=200, c='blue', alpha=0.5)
+    ax.axis('equal')
+    # ax.set_title('Reference Trajectory')
+    ax.tick_params(axis='z', which='major', pad=10)
+
+    ax.set_xlabel(r'$\xi_1(m)$', labelpad=20)
+    ax.set_ylabel(r'$\xi_2(m)$', labelpad=20)
+    ax.set_zlabel(r'$\xi_3(m)$', labelpad=20)
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=4))
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=4))
+    ax.zaxis.set_major_locator(MaxNLocator(nbins=4))
+
+    ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+
+    ax.set_title("plot_gmm_on_traj")
+
+
 
 
 
@@ -489,7 +667,7 @@ def plot_train_test_4d(q_train, index_list, q_test, **argv):
 
     for k in range(4):
         ax.plot(idx, q_test_q[:, k], color=colors[k],linewidth=2, label = label_list[k])
-    ax.legend(ncol=4, loc="best")
+    # ax.legend(ncol=4, loc="best")
 
 
     plt.savefig('quaternion.png', dpi=600)
