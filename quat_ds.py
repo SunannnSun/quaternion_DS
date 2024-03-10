@@ -23,9 +23,10 @@ def compute_ang_vel(q_k, q_kp1, dt=0.1):
 
 
 class quat_ds:
-    def __init__(self, q_in, q_out, q_att, index_list, K_init) -> None:
+    def __init__(self, q_in, q_out, q_init, q_att, index_list, K_init) -> None:
         self.q_in  = q_in
         self.q_out = q_out
+        self.q_init = q_init
         self.q_att = q_att
         self.index_list = index_list
         self.K_init = K_init
@@ -193,7 +194,8 @@ class quat_ds:
             "Mu": Mu.ravel().tolist(),
             "Sigma": Sigma.ravel().tolist(),
             "A": self.A.ravel().tolist(),
-            "att": self.q_att.as_quat().tolist()
+            "att": self.q_att.as_quat().tolist(),
+            "q_init": self.q_init.as_quat().tolist()
         }
 
         with open(js_path, "w") as f:
