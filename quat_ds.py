@@ -2,9 +2,9 @@ import os, sys, json
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from util import optimize_tools, plot_tools
-from util.quat_tools import *
-from util.gmm import gmm as gmm_class   
+from .util import optimize_tools, plot_tools
+from .util.quat_tools import *
+from .util.gmm import gmm as gmm_class   
 
 
 def compute_ang_vel(q_k, q_kp1, dt=0.1):
@@ -62,6 +62,40 @@ class quat_ds:
     def begin(self):
         self._cluster()
         self._optimize()
+
+        self.logOut()
+
+
+
+
+    def step(self, q_in, dt):
+            """
+            recity awaits to be done
+            q_in : R object
+            """
+
+            K = self.K
+            A = self.A
+            q_att = self.q_att
+            gmm   = self.gmm
+
+            q_in_att  = riem_log(q_att, q_in)
+            q_out_att = np.zeros((4, 1))
+
+            w_k = gmm.postLogProb(q_in)
+            for k in range(K):
+                q_out_att += w_k[k, 0] * A[k] @ q_in_att.reshape(-1, 1)
+
+            q_out_body = parallel_transport(q_att, q_in, q_out_att.T)
+            q_out_q    = riem_exp(q_in, q_out_body) 
+            q_out      = R.from_quat(q_out_q.reshape(4,))
+
+            w_out      = compute_ang_vel(q_in, q_out, dt)
+            q_next     = q_in * R.from_rotvec(w_out * dt)
+
+
+            return q_next, w_k
+
 
 
     def sim(self, q_init, dt=0.1, if_perturb=False):

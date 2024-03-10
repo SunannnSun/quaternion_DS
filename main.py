@@ -19,19 +19,21 @@ quat_ds.begin()
 
 # q_init = R.from_quat(-q_init.as_quat())
 
-q_test, w_test = quat_ds.sim(q_init, dt=0.1)
+
+# q_init = q_init * R.from_euler('xyz', [0.4, 0.3, 0.1 ])
+q_test, w_test = quat_ds.sim(q_init, dt=0.01)
 
 
 """############ PLOT RESULTS #############"""
 
-plot_tools.plot_quat(q_test, title='q_test')
+plot_tools.plot_quat(q_test, dt=0.01, title='q_test')
 plot_tools.plot_gmm_prob(w_test, title="GMM Posterior Probability of Reproduced Data")
 
-plot_tools.plot_reference_trajectories_DS(p_in)
+# plot_tools.plot_reference_trajectories_DS(p_in)
 
-# plot_tools.plot_quat(q_in, title='q_in')
+plot_tools.plot_quat(q_out, title='q_in')
 
-# plot_tools.plot_train_test(q_in, index_list)
+plot_tools.plot_train_test_4d(q_in, index_list, q_test)
 
 plt.show()
 

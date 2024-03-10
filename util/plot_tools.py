@@ -29,7 +29,7 @@ def _interp_index_list(q_list, index_list, interp=True, arr=True):
         N = ref[-1]
 
         for l in range(L):
-            index_list_interp.append(np.linspace(0, N, num=index_list[l].shape[0], endpoint=True, dtype=int))
+            index_list_interp.append(np.linspace(0, N, num=index_list[l].shape[0], endpoint=False, dtype=int))
 
         if arr==False:
             return index_list_interp
@@ -209,7 +209,7 @@ def plot_demo(q_list, index_list, interp, **argv):
 
 
 
-def plot_quat(q_list, **argv):
+def plot_quat(q_list, dt=1, **argv):
 
     if "ax" not in argv:
         fig = plt.figure()
@@ -227,7 +227,7 @@ def plot_quat(q_list, **argv):
 
     colors = ['red', 'blue', 'lime', 'magenta']
     for k in range(4):
-        ax.plot(np.arange(N), q_list_q[:, k], color=colors[k], label = label_list[k])
+        ax.plot(np.arange(N)*dt, q_list_q[:, k], color=colors[k], label = label_list[k])
 
     ax.legend()
     if "title" in argv:

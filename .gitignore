@@ -12,3 +12,6 @@ output.json
 
 p_in.npy
 q_test.np
+
+
+output_ori.json
