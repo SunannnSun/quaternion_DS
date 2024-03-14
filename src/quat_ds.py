@@ -1,6 +1,3 @@
-print(__package__)
-print(__name__)
-
 import os, sys, json
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -11,15 +8,14 @@ from .util.gmm import gmm as gmm_class
 
 
 def compute_ang_vel(q_k, q_kp1, dt=0.1):
-    """
-    Compute angular velocity in q_k frame to rotate q_k into q_kp1 given known time difference
-    """
 
-    dq = q_k.inv() * q_kp1
+    dq = q_k.inv() * q_kp1    # from q_k to q_kp1 in body frame
 
-    dq = dq.as_rotvec()
+    # dq = q_kp1 * q_k.inv()    # from q_k to q_kp1 in fixed frame
 
-    w  = 2 * dq / dt
+    dq = dq.as_rotvec() 
+
+    w  = dq / dt
 
     return w
 
@@ -27,34 +23,42 @@ def compute_ang_vel(q_k, q_kp1, dt=0.1):
 
 class quat_ds:
     def __init__(self, q_in, q_out, q_init, q_att, index_list, K_init) -> None:
+
+        # store the arugments
         self.q_in  = q_in
         self.q_out = q_out
         self.q_init = q_init
         self.q_att = q_att
         self.index_list = index_list
         self.K_init = K_init
-
         self.N = len(q_in)
         
-        """
-        Mapping q_in to index_list
-        """
+
+        # q_new correspond to q_out for the learning of A only
         q_new = []
         for l in range(len(index_list)):
-            for idx in index_list[l]:
-                q_new.append(q_in[idx])
+            q_new += [q_in[idx] for idx in index_list[l]]
         self.q_new = q_new
 
 
+        # Simulation parameter
         self.tol = 10E-3
         self.max_iter = 10000
+
+
+        # define output path
+        file_path           = os.path.dirname(os.path.realpath(__file__))  
+        self.output_path    = os.path.join(os.path.dirname(file_path), 'output_ori.json')
     
 
     def _cluster(self):
-        gmm = gmm_class(self.q_in, self.q_att)
-        gmm.fit(self.K_init)
 
-        self.postProb = gmm.predict(self.q_new, self.index_list)
+        # clustering is done on all q_in
+        gmm = gmm_class(self.q_in, self.q_att)  
+        gmm.fit(self.K_init)
+        
+        # prediction is done on filtered q_new
+        self.postProb = gmm.predict(self.q_new, self.index_list) 
         self.K        = gmm.K
         self.gmm      = gmm
         
@@ -75,7 +79,6 @@ class quat_ds:
     def step(self, q_in, dt):
             """
             recity awaits to be done
-            q_in : R object
             """
 
             K = self.K
@@ -138,7 +141,7 @@ class quat_ds:
 
             if if_perturb and i==50:
                 q_in =  R.from_rotvec([0.2, 0.1, 0.1]) * q_in
-                # q_in =  R.random() * q_in
+
 
             q_in_att  = riem_log(q_att, q_in)
             q_out_att = np.zeros((4, 1))
@@ -182,11 +185,7 @@ class quat_ds:
 
 
     def logOut(self):
-        js_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'output_ori.json')
 
-        # with open(js_path, 'r') as f:
-        #     data = json.load(f)
-        
         Priors, Mu, Sigma = self.gmm.return_param()
 
         js = {
@@ -201,7 +200,7 @@ class quat_ds:
             "q_init": self.q_init.as_quat().tolist()
         }
 
-        with open(js_path, "w") as f:
+        with open(self.output_path, "w") as f:
             json.dump(js, f, indent=4)
     
         pass       

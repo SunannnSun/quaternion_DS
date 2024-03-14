@@ -26,10 +26,12 @@ def _get_sequence(seq_file):
 
 def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     """
-    Solely used to load the raw dataset
+    Load the raw data
 
     Return:
-        p_out: N by 3 np.array 
+        p_out: array of shape [N, 3]  
+        q_out: list of N Rotation objects
+        indexList: list of L array of size 1000 each; e.g. indexList = [np.array([0,...,999]), np.array([1000,...1999])]
 
     Note:
         [num_demos=9, trajectory_length=1000, data_dimension=7] 
@@ -50,7 +52,6 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     N_tot = num_traj * N
 
     q_in  = [R.identity()] * N_tot
-    
     p_in = np.zeros((N_tot, 3))
 
     for l in range(num_traj):

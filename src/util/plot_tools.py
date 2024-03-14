@@ -16,7 +16,23 @@ font = {'family' : 'Times New Roman',
 
 mpl.rc('font', **font)
 
+
+
 def _interp_index_list(q_list, index_list, interp=True, arr=True):
+
+    """
+    Parameters:
+        index_list: [np.array([0,...,999]), np.array([1000,...1999])]
+    
+        index_list_interp: [np.array([0,...,999]), np.array([0,...999])]
+
+    Note:
+        the input indexList retains the sequence across trajs: good for indexing, bad for plotting when each traj contains different size;
+        the output indexList starts at 0 for each traj: bad for indexing, good for plotting
+    """
+
+
+
     L = len(index_list)
 
     index_list_interp = []
@@ -170,7 +186,7 @@ def plot_gmm(q_list, index_list, label, interp):
 
     fig = plt.figure()
     ax = fig.add_subplot()
-    ax.figure.set_size_inches(12, 6)
+    ax.figure.set_size_inches(8, 6)
 
     index_list_interp = _interp_index_list(q_list, index_list, interp)
 
@@ -204,7 +220,6 @@ def plot_demo(q_list, index_list, interp, **argv):
     if "title" in argv:
         ax.set_title(argv["title"])
 
-    pass
 
 
 
@@ -304,7 +319,7 @@ def plot_rot_vec(w_list, **argv):
 
 
 
-def plot_gmm_prob(w_arr, **argv):
+def plot_gamma_over_time(w_arr, **argv):
 
     N, K = w_arr.shape
 
@@ -405,7 +420,7 @@ def plot_gmm_prob(w_arr, **argv):
 
     N, K = w_arr.shape
 
-    fig, axs = plt.subplots(K, 1, figsize=(12, 8))
+    fig, axs = plt.subplots(K, 1, figsize=(8, 6))
 
     colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
     "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
@@ -414,7 +429,7 @@ def plot_gmm_prob(w_arr, **argv):
         axs[k].scatter(np.arange(N), w_arr[:, k], s=5, color=colors[k])
         axs[k].set_ylim([0, 1])
         # axs[k].set_xticks(np.linspace(0, N, 6, endpoint=False, dtype=int))
-        axs[k].set_xticks([0, 25, 50, 75, 100, 125, 150, 175])
+        # axs[k].set_xticks([0, 25, 50, 75, 100, 125, 150, 175])
 
 
     
@@ -615,7 +630,7 @@ def plot_train_test(q_train, index_list, q_test, **argv):
 
 
 
-def plot_train_test_4d(q_train, index_list, q_test, **argv):
+def overlay_train_test_4d(q_train, index_list, q_test, **argv):
 
     label_list = ['x', 'y', 'z', 'w']
     colors = ['red', 'blue', 'lime', 'magenta']
@@ -644,9 +659,7 @@ def plot_train_test_4d(q_train, index_list, q_test, **argv):
             # ax.yaxis.set_major_locator(MaxNLocator(nbins=2))
             # axs[k].set_ylabel(label_list[k])
 
-
     # ax.legend(loc="upper left")
-
 
     # ax.xaxis.set_visible(False)
     ax.spines['top'].set_visible(False)  # Hide top border line
@@ -667,19 +680,19 @@ def plot_train_test_4d(q_train, index_list, q_test, **argv):
 
     for k in range(4):
         ax.plot(idx, q_test_q[:, k], color=colors[k],linewidth=2, label = label_list[k])
+
     # ax.legend(ncol=4, loc="best")
 
+    # ax.set_title("Reproduction vs. Demonstration")
 
-    plt.savefig('quaternion.png', dpi=600)
-
-
+    # plt.savefig('quaternion.png', dpi=600)
 
 
     # if "title" in argv:
     #         axs[0].set_title(argv["title"])
 
 
-def plot_train_test_4d_demo(q_train, index_list, q_test, **argv):
+def overlay_train_test_4d_iros(q_train, index_list, q_test, **argv): # used to generate figure in IROS paper
     dt = 10E-3
 
     label_list = ['q_x ref', 'q_y ref', 'q_z ref', 'q_w ref']
@@ -692,13 +705,12 @@ def plot_train_test_4d_demo(q_train, index_list, q_test, **argv):
     
     fig = plt.figure()
     ax = fig.add_subplot()
-    # ax.figure.set_size_inches(6, 3.5)
-    ax.figure.set_size_inches(17, 10)
+    ax.figure.set_size_inches(6, 3.5)
+    # ax.figure.set_size_inches(17, 10)
 
     q_list_q = list_to_arr(q_train)
 
     index_list_interp = _interp_index_list(q_train, index_list, interp=True, arr=False)
-
 
     q_list_q = list_to_arr(q_train)
     L = len(index_list_interp)
@@ -709,6 +721,7 @@ def plot_train_test_4d_demo(q_train, index_list, q_test, **argv):
             for k in range(4):
                 ax.plot(index_list_interp[l]*dt/2, q_l[:, k], linewidth=1, color=colors[k], alpha=0.3, label = label_list[k])
         else:
+            for k in range(4):
                 ax.plot(index_list_interp[l]*dt/2, q_l[:, k], linewidth=1, color=colors[k], alpha=0.3)
 
     # ax.set_xticks([])
@@ -729,12 +742,12 @@ def plot_train_test_4d_demo(q_train, index_list, q_test, **argv):
     idx = np.linspace(0, N, num=q_test_q.shape[0], endpoint=True, dtype=int)
 
     for k in range(4):
-            ax.plot(idx*dt/2, q_test_q[:, k], color=colors[k],linewidth=2, label = pred_label_list[k])
+            ax.plot(idx*dt/2, q_test_q[:, k], color=colors[k], linewidth=2, label = pred_label_list[k])
 
 
 
-
-
+    # For legend generation only
+    """ 
     label_list = ['p_x ref', 'p_y ref', 'p_z ref']
     pred_label_list = ['p_x pred', 'p_y pred', 'p_z pred']
 
@@ -758,29 +771,16 @@ def plot_train_test_4d_demo(q_train, index_list, q_test, **argv):
 
 
     ax.legend(ncol=7, loc="best")
-
     # reorderLegend(ax,['q_x ref', 'q_y ref', 'q_z ref', 'q_w ref', 'q_x pred', 'q_y pred', 'q_z pred', 'q_w pred'])
 
     reorderLegend(ax,['p_x pred', 'p_x ref', 'p_y pred', 'p_y ref', 'p_z pred', 'p_z ref', 'q_x pred', 'q_x ref', 'q_y pred', 'q_y ref', 'q_z pred', 'q_z ref', 'q_w pred', 'q_w ref'])
+    """
 
-    plt.savefig('quaternion.png', dpi=600)
-
-
-
-# def plot_legend():
+    # plt.savefig('quaternion.png', dpi=600)
 
 
-#     pos_colors = ['black', 'darkviolet', 'mediumblue']
-
-#     ori_colors = ['coral', 'darkred', 'peru', 'red']
 
 
-#     fig = plt.figure()
-#     ax = fig.add_subplot()
-#     ax.figure.set_size_inches(6, 3.5)
-
-
-#     ax.legend(ncol=4, loc="best")
     
 def reorderLegend(ax=None,order=None,unique=False):
     if ax is None: ax=plt.gca()

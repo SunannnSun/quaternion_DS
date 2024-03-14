@@ -2,9 +2,9 @@ import os, sys, json
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from ..util import optimize_tools, plot_tools
-from ..util.quat_tools import *
-from ..util.gmm_coupled import gmm as gmm_class   
+from .util import optimize_tools, plot_tools
+from .util.quat_tools import *
+from .util.gmm_coupled import gmm as gmm_class   
 
 
 def compute_ang_vel(q_k, q_kp1, dt=0.1):

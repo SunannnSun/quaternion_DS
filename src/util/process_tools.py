@@ -26,7 +26,7 @@ def _shift(q_list, index_list):
     q_att      = [q_list[index_list[l][-1]]  for l in range(L)]
     q_att_quat = [q_att[l].as_quat() for l in range(L)]
     q_att_avg  = R.from_quat(q_att_quat).mean()
-    # q_att_avg = quat_tools.quat_mean(q_att)
+    # q_att_avg = quat_tools.quat_mean(q_att)           # NOT used
 
     q_shifted = []
     for l in range(L):
@@ -79,6 +79,7 @@ def _smooth(q_in, q_att, index_list, opt):
 
 
 def _filter(q_in, index_list):
+    
     L = len(index_list)
     max_threshold = 0.01
 
@@ -113,10 +114,10 @@ def _filter(q_in, index_list):
 def pre_process(q_in_raw, index_list, opt="savgol"):
 
     q_in, q_att             = _shift(q_in_raw, index_list)
-    plot_tools.plot_demo(q_in, index_list, interp=True, title="shifted demonstration")
+    # plot_tools.plot_demo(q_in, index_list, interp=True, title="q_shifted")
     
     q_in                    = _smooth(q_in, q_att, index_list, opt)
-    plot_tools.plot_demo(q_in, index_list, interp=True, title='q_smooth')
+    # plot_tools.plot_demo(q_in, index_list, interp=True, title='q_smooth')
 
     q_out, index_list       = _filter(q_in, index_list)
     # plot_tools.plot_demo(q_in, index_list, interp=False, title='q_filter')
