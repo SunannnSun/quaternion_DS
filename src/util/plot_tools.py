@@ -429,7 +429,7 @@ def plot_gmm_prob_overlay(**argv):
 
     K = 4
     
-    fig, axs = plt.subplots(K, 1, figsize=(12, 11))
+    fig, axs = plt.subplots(K, 1, figsize=(6, 11))
 
     colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
     "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
@@ -464,7 +464,7 @@ def plot_gmm_prob_overlay(**argv):
 
     
     axs[0].legend()
-    axs[0].set_title(r"Comparison Result of Mixing function $\gamma(\cdot)$ over Time")
+    axs[0].set_title(r"$\gamma(\cdot)$ over Time")
     axs[3].set_xlabel("Time (sec)")
     plt.savefig('gmm.png', dpi=600)
 
@@ -677,3 +677,124 @@ def plot_train_test_4d(q_train, index_list, q_test, **argv):
 
     # if "title" in argv:
     #         axs[0].set_title(argv["title"])
+
+
+def plot_train_test_4d_demo(q_train, index_list, q_test, **argv):
+    dt = 10E-3
+
+    label_list = ['q_x ref', 'q_y ref', 'q_z ref', 'q_w ref']
+    pred_label_list = ['q_x pred', 'q_y pred', 'q_z pred', 'q_w pred']
+
+    # colors = ['black', 'orchid', 'cornflowerblue', 'seagreen']
+    colors = ['coral', 'darkred', 'peru', 'red']
+
+    # colors = ['lightblue', 'lightgreen', 'lightcoral', 'lightsalmon']
+    
+    fig = plt.figure()
+    ax = fig.add_subplot()
+    # ax.figure.set_size_inches(6, 3.5)
+    ax.figure.set_size_inches(17, 10)
+
+    q_list_q = list_to_arr(q_train)
+
+    index_list_interp = _interp_index_list(q_train, index_list, interp=True, arr=False)
+
+
+    q_list_q = list_to_arr(q_train)
+    L = len(index_list_interp)
+    
+    for l in range(L):
+        q_l = q_list_q[index_list[l], :]
+        if l == 0:
+            for k in range(4):
+                ax.plot(index_list_interp[l]*dt/2, q_l[:, k], linewidth=1, color=colors[k], alpha=0.3, label = label_list[k])
+        else:
+                ax.plot(index_list_interp[l]*dt/2, q_l[:, k], linewidth=1, color=colors[k], alpha=0.3)
+
+    # ax.set_xticks([])
+    # ax.set_xticklabels([])
+
+    # ax.xaxis.set_visible(False)
+    # ax.spines['top'].set_visible(False)  # Hide top border line
+    # ax.spines['right'].set_visible(False)  # Hide top border line
+
+    # ax.set_xlabel("Time (sec)")
+    # ax.set_ylabel("Quaternion")
+
+    N = index_list_interp[0][-1]
+
+    q_test_q = list_to_arr(q_test)
+
+
+    idx = np.linspace(0, N, num=q_test_q.shape[0], endpoint=True, dtype=int)
+
+    for k in range(4):
+            ax.plot(idx*dt/2, q_test_q[:, k], color=colors[k],linewidth=2, label = pred_label_list[k])
+
+
+
+
+
+    label_list = ['p_x ref', 'p_y ref', 'p_z ref']
+    pred_label_list = ['p_x pred', 'p_y pred', 'p_z pred']
+
+    colors_pos = ['black', 'darkviolet', 'mediumblue']
+
+    for l in range(L):
+        q_l = q_list_q[index_list[l], :]
+        if l == 0:
+            for k in range(3):
+                ax.plot(index_list_interp[l]*dt/2, q_l[:, k], linewidth=1, color=colors_pos[k], alpha=0.3, label = label_list[k])
+        else:
+                ax.plot(index_list_interp[l]*dt/2, q_l[:, k], linewidth=1, color=colors_pos[k], alpha=0.3)
+
+    for k in range(3):
+        ax.plot(idx*dt/2, q_test_q[:, k], color=colors_pos[k],linewidth=2, label = pred_label_list[k])
+    
+    # ax.set_title("Quaternion", fontsize = 30)
+        
+
+
+
+
+    ax.legend(ncol=7, loc="best")
+
+    # reorderLegend(ax,['q_x ref', 'q_y ref', 'q_z ref', 'q_w ref', 'q_x pred', 'q_y pred', 'q_z pred', 'q_w pred'])
+
+    reorderLegend(ax,['p_x pred', 'p_x ref', 'p_y pred', 'p_y ref', 'p_z pred', 'p_z ref', 'q_x pred', 'q_x ref', 'q_y pred', 'q_y ref', 'q_z pred', 'q_z ref', 'q_w pred', 'q_w ref'])
+
+    plt.savefig('quaternion.png', dpi=600)
+
+
+
+# def plot_legend():
+
+
+#     pos_colors = ['black', 'darkviolet', 'mediumblue']
+
+#     ori_colors = ['coral', 'darkred', 'peru', 'red']
+
+
+#     fig = plt.figure()
+#     ax = fig.add_subplot()
+#     ax.figure.set_size_inches(6, 3.5)
+
+
+#     ax.legend(ncol=4, loc="best")
+    
+def reorderLegend(ax=None,order=None,unique=False):
+    if ax is None: ax=plt.gca()
+    handles, labels = ax.get_legend_handles_labels()
+    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0])) # sort both labels and handles by labels
+    if order is not None: # Sort according to a given list (not necessarily complete)
+        keys=dict(zip(order,range(len(order))))
+        labels, handles = zip(*sorted(zip(labels, handles), key=lambda t,keys=keys: keys.get(t[0],np.inf)))
+    if unique:  labels, handles= zip(*unique_everseen(zip(labels,handles), key = labels)) # Keep only the first of each handle
+    ax.legend(handles, labels, ncol=7, bbox_to_anchor=(0., 1.05, 1., .102), loc="upper center", fontsize=20)
+    return(handles, labels)
+
+
+def unique_everseen(seq, key=None):
+    seen = set()
+    seen_add = seen.add
+    return [x for x,k in zip(seq,key) if not (k in seen or seen_add(k))]

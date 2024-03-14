@@ -15,3 +15,9 @@ q_test.np
 
 
 output_ori.json
+position.png
+quaternion.png
+gmm.png
+
+w.npy
+w_perturb.npy

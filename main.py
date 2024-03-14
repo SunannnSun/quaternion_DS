@@ -1,11 +1,14 @@
+print(__package__)
+
+print(__name__)
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 
 
-from quat_ds import quat_ds as quat_ds_class
-from util import plot_tools, traj_generator, quat_tools, load_tools, process_tools
-
+from src.quat_ds import quat_ds as quat_ds_class
+from src.util import plot_tools, traj_generator, quat_tools, load_tools, process_tools
 
 
 """####### LOAD AND PROCESS DATA ########"""
@@ -19,8 +22,9 @@ quat_ds.begin()
 
 # q_init = R.from_quat(-q_init.as_quat())
 
-
 # q_init = q_init * R.from_euler('xyz', [0.4, 0.3, 0.1 ])
+
+
 q_test, w_test = quat_ds.sim(q_init, dt=0.01)
 
 
