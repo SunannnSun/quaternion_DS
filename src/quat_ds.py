@@ -7,7 +7,13 @@ from .util.quat_tools import *
 from .util.gmm import gmm as gmm_class   
 
 
-def compute_ang_vel(q_k, q_kp1, dt=0.1):
+def compute_ang_vel(q_k, q_kp1, dt=0.01):
+    """
+    note: dt here is our "assumed" time difference between each of our data points after filtering... and does not
+    bear the same meaning as the time step in simulation.. hence in SE(3) should be set consistently with the dt
+    used to generate the linear velocity...
+    
+    """
 
     dq = q_k.inv() * q_kp1    # from q_k to q_kp1 in body frame
 
@@ -97,7 +103,7 @@ class quat_ds:
             q_out_q    = riem_exp(q_in, q_out_body) 
             q_out      = R.from_quat(q_out_q.reshape(4,))
 
-            w_out      = compute_ang_vel(q_in, q_out, dt)
+            w_out      = compute_ang_vel(q_in, q_out)
             q_next     = q_in * R.from_rotvec(w_out * dt)
 
 

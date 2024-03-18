@@ -36,6 +36,8 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     Note:
         [num_demos=9, trajectory_length=1000, data_dimension=7] 
         A data point consists of 7 elements: px,py,pz,qw,qx,qy,qz (3D position followed by quaternions in the scalar first format).
+
+        p_in here is unusually large... needing to scale it down
     """
 
     file_path           = os.path.dirname(os.path.realpath(__file__))  
@@ -69,6 +71,9 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
 
 
     index_list = [np.arange(l*N, (l+1)*N) for l in range(num_traj)]
+    
+
+    p_in /= 100
     
     return p_in, q_in, index_list
 
