@@ -2,7 +2,7 @@ import os, sys, json
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from .util import optimize_tools, quat_tools, plot_tools
+from .util import optimize_tools, quat_tools
 from .gmm_class import gmm_class
 
 
@@ -29,8 +29,6 @@ def compute_ang_vel(q_k, q_kp1, dt=0.01):
 class quat_class:
     def __init__(self, q_in:list,  q_out:list, q_att:R, K_init:int) -> None:
         """
-        Initialize an se3_class object
-
         Parameters:
         ----------
             q_in (list):            M-length List of Rotation objects for ORIENTATION INPUT
@@ -39,11 +37,11 @@ class quat_class:
 
             q_att (Rotation):       Single Rotation object for ORIENTATION ATTRACTOR
             
-            K_init:                 Number of Gaussian Components
+            K_init:                 Inital number of GAUSSIAN COMPONENTS
 
-            M: Observation size
+            M:                      OBSERVATION size
 
-            N: Observation dimenstion (assuming 3D)
+            N:                      OBSERVATION dimenstion
         """
 
         # store parameters
@@ -53,6 +51,7 @@ class quat_class:
 
         self.K_init = K_init
         self.M = len(q_in)
+        self.N = 4
 
         # simulation parameters
         self.tol = 10E-3
@@ -82,15 +81,14 @@ class quat_class:
     def begin(self):
         self._cluster()
         self._optimize()
-        # self._logOut()
+        self._logOut()
 
 
 
     def sim(self, q_init, dt, step_size):
         q_test = [q_init]
         gamma_test = []
-
-        w_test = []
+        omega_test = []
 
         i = 0
         while np.linalg.norm((q_test[-1] * self.q_att.inv()).as_rotvec()) >= self.tol:
@@ -100,16 +98,15 @@ class quat_class:
             
             q_in  = q_test[i]
 
-            q_next, gamma, w = self._step(q_in, dt, step_size)
+            q_next, gamma, omega = self._step(q_in, dt, step_size)
 
             q_test.append(q_next)        
             gamma_test.append(gamma[:, 0])
-
-            w_test.append(w)
+            omega_test.append(omega)
 
             i += 1
 
-        return  q_test, np.array(gamma_test), w_test
+        return  q_test, np.array(gamma_test), omega_test
         
 
 
@@ -171,15 +168,15 @@ class quat_class:
         Mu_rollout = [q_mean.as_quat() for q_mean in Mu]
         Sigma = self.gmm.Sigma
 
-        Mu_arr      = np.zeros((self.K, 4)) 
-        Sigma_arr   = np.zeros((self.K, 4, 4), dtype=np.float32)
+        Mu_arr      = np.zeros((self.K, self.N)) 
+        Sigma_arr   = np.zeros((self.K, self.N, self.N), dtype=np.float32)
 
         for k in range(self.K):
             Mu_arr[k, :] = Mu_rollout[k]
             Sigma_arr[k, :, :] = Sigma[k]
 
         json_output = {
-            "name": "SE3-LPVDS result",
+            "name": "Quaternion-DS result",
 
             "K": self.K,
             "M": 4,
@@ -193,5 +190,4 @@ class quat_class:
             "gripper_open": 0
         }
 
-        js_path =  os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'ori.json')
-        write_json(json_output, js_path)
+        write_json(json_output, self.output_path)
