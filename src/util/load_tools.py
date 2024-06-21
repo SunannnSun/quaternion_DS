@@ -1,6 +1,49 @@
 import os
 import numpy as np
+from scipy.io import loadmat
 from scipy.spatial.transform import Rotation as R
+
+
+
+
+def _process_bag(path):
+    """ Process .mat files that is converted from .bag files """
+
+    data_ = loadmat(r"{}".format(path))
+    data_ = data_['data_ee_pose']
+    L = data_.shape[1]
+
+    p_raw     = []
+    q_raw     = []
+    t_raw     = []
+
+    sample_step = 5
+    vel_thresh  = 1e-3 
+    
+    for l in range(L):
+        data_l = data_[0, l]['pose'][0,0]
+        pos_traj  = data_l[:3, ::sample_step]
+        quat_traj = data_l[3:7, ::sample_step]
+        time_traj = data_l[-1, ::sample_step].reshape(1,-1)
+
+        raw_diff_pos = np.diff(pos_traj)
+        vel_mag = np.linalg.norm(raw_diff_pos, axis=0).flatten()
+        first_non_zero_index = np.argmax(vel_mag > vel_thresh)
+        last_non_zero_index = len(vel_mag) - 1 - np.argmax(vel_mag[::-1] > vel_thresh)
+
+        if first_non_zero_index >= last_non_zero_index:
+            raise Exception("Sorry, vel are all zero")
+
+        pos_traj  = pos_traj[:, first_non_zero_index:last_non_zero_index]
+        quat_traj = quat_traj[:, first_non_zero_index:last_non_zero_index]
+        time_traj = time_traj[:, first_non_zero_index:last_non_zero_index] * 2
+        
+        p_raw.append(pos_traj.T)
+        q_raw.append([R.from_quat(quat_traj[:, i]) for i in range(quat_traj.shape[1]) ])
+        t_raw.append(time_traj.reshape(time_traj.shape[1]))
+
+    return p_raw, q_raw, t_raw
+
 
 
 
@@ -26,19 +69,26 @@ def _get_sequence(seq_file):
 
 def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     """
-    Load the raw data
+    Load data from clfd dataset
 
     Return:
-        p_out: array of shape [N, 3]  
-        q_out: list of N Rotation objects
-        indexList: list of L array of size 1000 each; e.g. indexList = [np.array([0,...,999]), np.array([1000,...1999])]
+    -------
+        p_raw:  a LIST of L trajectories, each containing M observations of N dimension, or [M, N] ARRAY;
+                M can vary and need not be same between trajectories
 
+        q_raw:  a LIST of L trajectories, each containting a LIST of M (Scipy) Rotation objects;
+                need to consistent with M from position
+        
     Note:
+    ----
+        NO time stamp available in this dataset!
+
         [num_demos=9, trajectory_length=1000, data_dimension=7] 
         A data point consists of 7 elements: px,py,pz,qw,qx,qy,qz (3D position followed by quaternions in the scalar first format).
-
-        p_in here is unusually large... needing to scale it down
     """
+
+    L = num_traj
+    T = 10.0            # pick a time duration 
 
     file_path           = os.path.dirname(os.path.realpath(__file__))  
     dir_path            = os.path.dirname(file_path)
@@ -48,32 +98,62 @@ def load_clfd_dataset(task_id=1, num_traj=1, sub_sample=3):
     filenames   = _get_sequence(seq_file)
     datafile    = os.path.join(data_path, "dataset", "pos_ori", filenames[task_id])
     
-
     data        = np.load(datafile)[:, ::sub_sample, :]
-    _, N, _     = data.shape
-    N_tot = num_traj * N
 
-    q_in  = [R.identity()] * N_tot
-    p_in = np.zeros((N_tot, 3))
+    p_raw = []
+    q_raw = []
+    t_raw = []
 
-    for l in range(num_traj):
+    for l in range(L):
+        M = data[l, :, :].shape[0]
 
-        data_ori = np.zeros((N, 4))
-
-        w        = data[l, :, 3 ].copy()
+        data_ori = np.zeros((M, 4))         # convert to scalar last format, consistent with Scipy convention
+        w        = data[l, :, 3 ].copy()  
         xyz      = data[l, :, 4:].copy()
         data_ori[:, -1]  = w
         data_ori[:, 0:3] = xyz
 
-        q_in[l*N: (l+1)*N] = [R.from_quat(q) for q in data_ori.tolist()]
+        p_raw.append(data[l, :, :3])
+        q_raw.append([R.from_quat(q) for q in data_ori.tolist()])
+        t_raw.append(np.linspace(0, T, M, endpoint=False))   # hand engineer an equal-length time stamp
 
-        p_in[l*N: (l+1)*N, :] = data[l, :, :3]
+
+    return p_raw, q_raw, t_raw
 
 
-    index_list = [np.arange(l*N, (l+1)*N) for l in range(num_traj)]
+
+
+def load_demo_dataset():
+    """
+    Load demo data recorded from demonstration
+
+
+    """
+
+    input_path  = os.path.join(os.path.dirname(os.path.realpath(__file__)),"..", "..", "dataset", "demo", "all.mat")
     
+    return _process_bag(input_path)
 
-    p_in /= 100
-    
-    return p_in, q_in, index_list
 
+
+
+def load_npy():
+
+    traj = np.load("traj1.npy")
+
+    q_raw = [R.from_matrix(traj[i, :3, :3]) for i in range(traj.shape[0])]
+
+    p_raw = [traj[i, :3, -1] for i in range(traj.shape[0])]
+
+
+
+    T = 10
+
+    dt = T/traj.shape[0]
+    t_raw = [dt*i for i in range(traj.shape[0])]
+
+
+    p_in = np.vstack(p_raw)
+    # p_in[:, -1] = p_in[:, -1] + 0.005 
+
+    return [p_in], [q_raw], [t_raw], dt

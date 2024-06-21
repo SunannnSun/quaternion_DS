@@ -217,7 +217,9 @@ def parallel_transport(x, y, v):
 
 def riem_exp(x, v):
     """
-    The only useage of riem_exp so far is during simulation where x is a rotation object, v is a numpy array
+    Used during 
+         i) running savgol filter
+        ii) simulation where x is a rotation object, v is a numpy array
     """
 
     x = _process_x(x)
@@ -234,7 +236,7 @@ def riem_exp(x, v):
     else:
         v_norm = np.linalg.norm(v, axis=1, keepdims=True)
 
-        y = np.tile(x, (1000, 1)) * np.tile(np.cos(v_norm), (1,4)) + v / np.tile(v_norm / np.sin(v_norm), (1,4)) 
+        y = np.tile(x, (v_norm.shape[0], 1)) * np.tile(np.cos(v_norm), (1,4)) + v / np.tile(v_norm / np.sin(v_norm), (1,4)) 
 
 
     # # Find rows containing NaN values
