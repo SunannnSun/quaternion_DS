@@ -9,6 +9,37 @@ from .util.plot_tools import *
 
 
 
+def adjust_cov(cov, tot_scale_fact=1.2, rel_scale_fact=0.15):
+
+    eigenvalues, eigenvectors = np.linalg.eig(cov)
+
+    idxs = eigenvalues.argsort()
+    inverse_idxs = np.zeros((idxs.shape[0]), dtype=int)
+    for index, element in enumerate(idxs):
+        inverse_idxs[element] = index
+
+    eigenvalues_sorted  = np.sort(eigenvalues)
+    cov_ratio = eigenvalues_sorted[2]/eigenvalues_sorted[3]
+    if cov_ratio < rel_scale_fact:
+        lambda_4 = eigenvalues_sorted[3]
+        lambda_3 = eigenvalues_sorted[2] + lambda_4 * (rel_scale_fact - cov_ratio)
+        lambda_2 = eigenvalues_sorted[1] + lambda_4 * (rel_scale_fact - cov_ratio)
+        lambda_1 = eigenvalues_sorted[0] + lambda_4 * (rel_scale_fact - cov_ratio)
+
+        lambdas = np.array([lambda_1, lambda_2, lambda_3, lambda_4])
+
+        L = np.diag(lambdas[inverse_idxs]) * tot_scale_fact
+    else:
+        L = np.diag(eigenvalues) * tot_scale_fact
+
+
+    Sigma = eigenvectors @ L @ eigenvectors.T
+
+    return Sigma
+
+
+
+
 class gmm_class:
     def __init__(self, q_in:list, q_att:R, K_init:int):
         """
@@ -97,7 +128,11 @@ class gmm_class:
 
             Prior[k]  = len(q_k)/self.M
             Mu[k]     = q_k_mean
-            Sigma[k]  = q_diff.T @ q_diff / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
+            Sigma_k  = q_diff.T @ q_diff / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
+
+
+            Sigma[k]  = adjust_cov(Sigma_k)
+            # Sigma[k]  = Sigma_k
 
             gaussian_list.append(
                 {   
