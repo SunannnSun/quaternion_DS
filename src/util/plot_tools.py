@@ -19,30 +19,17 @@ from dtw import dtw
 
 
 
+def plot_omega(omega_test):
 
-def plot_vel(v_test, w_test):
-    v_test = np.vstack(v_test)
-    M, N = v_test.shape
-
+    # omega_test = np.vstack(omega_test)
+    M, N = omega_test.shape
     fig, axs = plt.subplots(3, 1, figsize=(12, 8))
 
     colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
     "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
 
     for k in range(3):
-        axs[k].scatter(np.arange(M), v_test[:, k], s=5, color=colors[k])
-        # axs[k].set_ylim([0, 1])
-
-
-    w_test = np.vstack(w_test)
-    M, N = w_test.shape
-    fig, axs = plt.subplots(3, 1, figsize=(12, 8))
-
-    colors = ["r", "g", "b", "k", 'c', 'm', 'y', 'crimson', 'lime'] + [
-    "#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(200)]
-
-    for k in range(3):
-        axs[k].scatter(np.arange(M), w_test[:, k], s=5, color=colors[k])
+        axs[k].scatter(np.arange(M), omega_test[:, k], s=5, color=colors[k])
         # axs[k].set_ylim([0, 1])
 
 

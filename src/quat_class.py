@@ -69,19 +69,27 @@ class quat_class:
         self.gamma    = gmm.fit()  # K by M
         self.K        = gmm.K
         self.gmm      = gmm
-        self.dual_gmm = gmm._dual_gmm()
 
 
 
     def _optimize(self):
-        self.A_ori = optimize_tools.optimize_ori(self.q_in, self.q_out, self.q_att, self.gamma)
+        A_ori = optimize_tools.optimize_ori(self.q_in, self.q_out, self.q_att, self.gamma)
+
+        q_in_dual   = [R.from_quat(-q.as_quat()) for q in self.q_in]
+        q_out_dual  = [R.from_quat(-q.as_quat()) for q in self.q_out]
+        q_att_dual =  R.from_quat(-self.q_att.as_quat())
+
+        A_ori_dual = optimize_tools.optimize_ori(q_in_dual, q_out_dual, q_att_dual, self.gamma)
+
+        self.A_ori = np.concatenate((A_ori, A_ori_dual), axis=0)
+
 
 
 
     def begin(self):
         self._cluster()
         self._optimize()
-        self._logOut()
+        # self._logOut()
 
 
 
@@ -106,14 +114,12 @@ class quat_class:
 
             i += 1
 
-        return  q_test, np.array(gamma_test), omega_test
+        return  q_test, np.array(gamma_test), np.array(omega_test)
         
 
 
     def _step(self, q_in, dt, step_size):
         """ Integrate forward by one time step """
-        q_in = self._rectify(q_in)
-
 
         # read parameters
         A_ori = self.A_ori
@@ -121,43 +127,38 @@ class quat_class:
         K     = self.K
         gmm   = self.gmm
 
-        # compute output
-        q_diff  = quat_tools.riem_log(q_att, q_in)
-        
+        # compute gamma
+        gamma = gmm.logProb(q_in)   # 2K by 1
+
+
+        # first cover 
         q_out_att = np.zeros((4, 1))
-        gamma = gmm.logProb(q_in)   # gamma value 
-
-
+        q_diff  = quat_tools.riem_log(q_att, q_in)
         for k in range(K):
             q_out_att += gamma[k, 0] * A_ori[k] @ q_diff.T
-            
-
         q_out_body = quat_tools.parallel_transport(q_att, q_in, q_out_att.T)
         q_out_q    = quat_tools.riem_exp(q_in, q_out_body) 
         q_out      = R.from_quat(q_out_q.reshape(4,))
-        w_out      = compute_ang_vel(q_in, q_out, dt)   #angular velocity
+        omega      = compute_ang_vel(q_in, q_out, dt)  
+
+        # dual cover
+        q_att_dual = R.from_quat(-q_att.as_quat())
+        q_out_att_dual = np.zeros((4, 1))
+        q_diff_dual  = quat_tools.riem_log(q_att_dual, q_in)
+        for k in range(K):
+            q_out_att_dual += gamma[self.K+k, 0] * A_ori[self.K+k] @ q_diff_dual.T
+        q_out_body_dual = quat_tools.parallel_transport(q_att_dual, q_in, q_out_att_dual.T)
+        q_out_q_dual    = quat_tools.riem_exp(q_in, q_out_body_dual) 
+        q_out_dual      = R.from_quat(q_out_q_dual.reshape(4,))
+        omega           += compute_ang_vel(q_in, q_out_dual, dt)  
+        
+        
+        # propagate forward
         # q_next     = q_in * R.from_rotvec(w_out * step_size)   #compose in body frame
-        q_next     = R.from_rotvec(w_out * step_size) * q_in  #compose in world frame
+        q_next     = R.from_rotvec(omega * step_size) * q_in  #compose in world frame
 
-        return q_next, gamma, w_out
-    
-
-
-    def _rectify(self, q_in):
-        
-        """
-        Rectify q_init if it lies on the unmodeled half of the quaternion space
-        """
-        dual_gmm    = self.dual_gmm
-        gamma_dual  = dual_gmm.logProb(q_in).T
-
-        index_of_largest = np.argmax(gamma_dual)
-
-        if index_of_largest <= (dual_gmm.K/2 - 1):
-            return q_in
-        else:
-            return R.from_quat(-q_in.as_quat())
-        
+        return q_next, gamma, omega
+            
     
 
 

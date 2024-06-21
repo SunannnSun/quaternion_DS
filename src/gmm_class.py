@@ -78,7 +78,9 @@ class gmm_class:
         self._rearrange_array(assignment_arr)
         self._extract_gaussian()
 
-        return self.logProb(self.q_in)
+        dual_gamma = self.logProb(self.q_in) # 2K by M
+
+        return dual_gamma[:self.K, :] # K by M; always remain the first half
 
 
 
@@ -119,7 +121,7 @@ class gmm_class:
         Sigma   = [np.zeros((self.N, self.N), dtype=np.float32)] * self.K
 
         gaussian_list = [] 
-
+        dual_gaussian_list = []
         for k in range(self.K):
             q_k      = [q for index, q in enumerate(self.q_in) if assignment_arr[index]==k] 
             q_k_mean = quat_mean(q_k)
@@ -128,11 +130,9 @@ class gmm_class:
 
             Prior[k]  = len(q_k)/self.M
             Mu[k]     = q_k_mean
-            Sigma_k  = q_diff.T @ q_diff / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
-
-
-            Sigma[k]  = adjust_cov(Sigma_k)
-            # Sigma[k]  = Sigma_k
+            Sigma_k   = q_diff.T @ q_diff / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
+            Sigma[k]  = Sigma_k
+            # Sigma[k]  = adjust_cov(Sigma_k)
 
             gaussian_list.append(
                 {   
@@ -143,7 +143,26 @@ class gmm_class:
                 }
             )
 
+
+            Mu_k     = R.from_quat(-q_k_mean.as_quat())
+            q_k_dual  = [R.from_quat(-q.as_quat()) for q in q_k]
+            q_diff_dual = riem_log(Mu_k, q_k_dual) 
+            Sigma_k  = q_diff_dual.T @ q_diff_dual / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
+            # Sigma_k  = adjust_cov(Sigma_k)
+
+            dual_gaussian_list.append(
+                {   
+                    "prior" : Prior[k],
+                    "mu"    : Mu_k,
+                    "sigma" : Sigma_k,
+                    "rv"    : multivariate_normal(np.zeros(4), Sigma_k, allow_singular=True)
+                }
+            )
+
+
         self.gaussian_list = gaussian_list
+        self.dual_gaussian_list = dual_gaussian_list
+
 
         self.Prior  = Prior
         self.Mu     = Mu
@@ -154,9 +173,9 @@ class gmm_class:
     def logProb(self, q_in):
         """ Compute log probability"""
         if isinstance(q_in, list):
-            logProb = np.zeros((self.K, len(q_in)))
+            logProb = np.zeros((self.K * 2, len(q_in)))
         else:
-            logProb = np.zeros((self.K, 1))
+            logProb = np.zeros((self.K * 2, 1))
 
 
         for k in range(self.K):
@@ -166,50 +185,18 @@ class gmm_class:
 
             logProb[k, :] = np.log(prior_k) + normal_k.logpdf(q_k)
 
+
+        for k in range(self.K):
+            prior_k, mu_k, _, normal_k = tuple(self.dual_gaussian_list[k].values())
+
+            q_k  = riem_log(mu_k, q_in)
+
+            logProb[k+self.K, :] = np.log(prior_k) + normal_k.logpdf(q_k)
+
+
         maxPostLogProb = np.max(logProb, axis=0, keepdims=True)
-        expProb = np.exp(logProb - np.tile(maxPostLogProb, (self.K, 1)))
+        expProb = np.exp(logProb - np.tile(maxPostLogProb, (self.K * 2, 1)))
         postProb = expProb / np.sum(expProb, axis = 0, keepdims=True)
 
         return postProb
     
-
-
-
-    def _dual_gmm(self):
-        """ dual GMM to cover the entire quaternion space """
-
-        K_dual = self.K * 2
-        # Prior_dual   = [0] * K_dual
-        dual_gaussian_list = [] 
-
-        for k in range(int(K_dual/2)):      
-            # Prior_dual[k]  = self.Prior[k] / 2
-            Prior, Mu, Sigma, _ = tuple(self.gaussian_list[k].values())
-
-            dual_gaussian_list.append({
-                    "prior" : Prior/2,
-                    "mu"    : Mu,
-                    "sigma" : Sigma,
-                    "rv"    : multivariate_normal(np.zeros(4), Sigma, allow_singular=True)
-                }
-            )
-
-        for k in np.arange(int(K_dual/2), K_dual):          
-            k_prev = k - int(K_dual/2)
-            # Prior_dual[k]  = Prior_dual[k_prev]
-            Prior, Mu, Sigma, _ = tuple(self.gaussian_list[k_prev].values())
-            Mu     = R.from_quat(-Mu.as_quat())
-
-            dual_gaussian_list.append({
-                    "prior" : Prior/2,
-                    "mu"    : Mu,
-                    "sigma" : Sigma,
-                    "rv"    : multivariate_normal(np.zeros(4), Sigma, allow_singular=True)
-                }
-            )
-        
-        dual_gmm = gmm_class(self.q_in, self.q_att, 1)
-        dual_gmm.K = K_dual
-        dual_gmm.gaussian_list = dual_gaussian_list
-
-        return dual_gmm
