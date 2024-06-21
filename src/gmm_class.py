@@ -131,8 +131,8 @@ class gmm_class:
             Prior[k]  = len(q_k)/self.M
             Mu[k]     = q_k_mean
             Sigma_k   = q_diff.T @ q_diff / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
-            Sigma[k]  = Sigma_k
-            # Sigma[k]  = adjust_cov(Sigma_k)
+            # Sigma[k]  = Sigma_k
+            Sigma[k]  = adjust_cov(Sigma_k)
 
             gaussian_list.append(
                 {   
@@ -148,7 +148,7 @@ class gmm_class:
             q_k_dual  = [R.from_quat(-q.as_quat()) for q in q_k]
             q_diff_dual = riem_log(Mu_k, q_k_dual) 
             Sigma_k  = q_diff_dual.T @ q_diff_dual / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
-            # Sigma_k  = adjust_cov(Sigma_k)
+            Sigma_k  = adjust_cov(Sigma_k)
 
             dual_gaussian_list.append(
                 {   

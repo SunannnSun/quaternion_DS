@@ -66,7 +66,7 @@ class quat_class:
     def _cluster(self):
         gmm = gmm_class(self.q_in, self.q_att, self.K_init)  
 
-        self.gamma    = gmm.fit()  # K by M
+        self.gamma    = gmm.fit()  # (K, M)
         self.K        = gmm.K
         self.gmm      = gmm
 
@@ -78,7 +78,6 @@ class quat_class:
         q_in_dual   = [R.from_quat(-q.as_quat()) for q in self.q_in]
         q_out_dual  = [R.from_quat(-q.as_quat()) for q in self.q_out]
         q_att_dual =  R.from_quat(-self.q_att.as_quat())
-
         A_ori_dual = optimize_tools.optimize_ori(q_in_dual, q_out_dual, q_att_dual, self.gamma)
 
         self.A_ori = np.concatenate((A_ori, A_ori_dual), axis=0)
@@ -122,13 +121,14 @@ class quat_class:
         """ Integrate forward by one time step """
 
         # read parameters
-        A_ori = self.A_ori
+        A_ori = self.A_ori  # (2K, N, N)
         q_att = self.q_att
         K     = self.K
         gmm   = self.gmm
 
+
         # compute gamma
-        gamma = gmm.logProb(q_in)   # 2K by 1
+        gamma = gmm.logProb(q_in)   # (2K, 1)
 
 
         # first cover 
@@ -140,6 +140,7 @@ class quat_class:
         q_out_q    = quat_tools.riem_exp(q_in, q_out_body) 
         q_out      = R.from_quat(q_out_q.reshape(4,))
         omega      = compute_ang_vel(q_in, q_out, dt)  
+
 
         # dual cover
         q_att_dual = R.from_quat(-q_att.as_quat())
@@ -154,8 +155,8 @@ class quat_class:
         
         
         # propagate forward
-        # q_next     = q_in * R.from_rotvec(w_out * step_size)   #compose in body frame
         q_next     = R.from_rotvec(omega * step_size) * q_in  #compose in world frame
+        # q_next     = q_in * R.from_rotvec(w_out * step_size)   #compose in body frame
 
         return q_next, gamma, omega
             
@@ -164,31 +165,33 @@ class quat_class:
 
     def _logOut(self): 
 
-        Prior = self.gmm.Prior
-        Mu    = self.gmm.Mu
-        Mu_rollout = [q_mean.as_quat() for q_mean in Mu]
-        Sigma = self.gmm.Sigma
+        # Prior = self.gmm.Prior
+        # Mu    = self.gmm.Mu
+        # Mu_rollout = [q_mean.as_quat() for q_mean in Mu]
+        # Sigma = self.gmm.Sigma
 
-        Mu_arr      = np.zeros((self.K, self.N)) 
-        Sigma_arr   = np.zeros((self.K, self.N, self.N), dtype=np.float32)
+        # Mu_arr      = np.zeros((self.K, self.N)) 
+        # Sigma_arr   = np.zeros((self.K, self.N, self.N), dtype=np.float32)
 
-        for k in range(self.K):
-            Mu_arr[k, :] = Mu_rollout[k]
-            Sigma_arr[k, :, :] = Sigma[k]
+        # for k in range(self.K):
+        #     Mu_arr[k, :] = Mu_rollout[k]
+        #     Sigma_arr[k, :, :] = Sigma[k]
 
-        json_output = {
-            "name": "Quaternion-DS result",
+        # json_output = {
+        #     "name": "Quaternion-DS result",
 
-            "K": self.K,
-            "M": 4,
-            "Prior": Prior,
-            "Mu": Mu_arr.ravel().tolist(),
-            "Sigma": Sigma_arr.ravel().tolist(),
+        #     "K": self.K,
+        #     "M": 4,
+        #     "Prior": Prior,
+        #     "Mu": Mu_arr.ravel().tolist(),
+        #     "Sigma": Sigma_arr.ravel().tolist(),
 
-            'A_ori': self.A_ori.ravel().tolist(),
-            'att_ori': self.q_att.as_quat().ravel().tolist(),
-            'q_init': self.q_in[0].as_quat().ravel().tolist(),
-            "gripper_open": 0
-        }
+        #     'A_ori': self.A_ori.ravel().tolist(),
+        #     'att_ori': self.q_att.as_quat().ravel().tolist(),
+        #     'q_init': self.q_in[0].as_quat().ravel().tolist(),
+        #     "gripper_open": 0
+        # }
 
-        write_json(json_output, self.output_path)
+        # write_json(json_output, self.output_path)
+
+        pass
