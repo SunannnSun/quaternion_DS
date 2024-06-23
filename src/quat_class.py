@@ -163,35 +163,36 @@ class quat_class:
     
 
 
-    def _logOut(self): 
+    def _logOut(self, *args): 
 
-        # Prior = self.gmm.Prior
-        # Mu    = self.gmm.Mu
-        # Mu_rollout = [q_mean.as_quat() for q_mean in Mu]
-        # Sigma = self.gmm.Sigma
+        Prior = self.gmm.Prior
+        Mu    = self.gmm.Mu
+        Mu_rollout = [q_mean.as_quat() for q_mean in Mu]
+        Sigma = self.gmm.Sigma
 
-        # Mu_arr      = np.zeros((self.K, self.N)) 
-        # Sigma_arr   = np.zeros((self.K, self.N, self.N), dtype=np.float32)
+        Mu_arr      = np.zeros((2 * self.K, self.N)) 
+        Sigma_arr   = np.zeros((2 * self.K, self.N, self.N), dtype=np.float32)
 
-        # for k in range(self.K):
-        #     Mu_arr[k, :] = Mu_rollout[k]
-        #     Sigma_arr[k, :, :] = Sigma[k]
+        for k in range(2 * self.K):
+            Mu_arr[k, :] = Mu_rollout[k]
+            Sigma_arr[k, :, :] = Sigma[k]
 
-        # json_output = {
-        #     "name": "Quaternion-DS result",
+        json_output = {
+            "name": "Quaternion-DS",
 
-        #     "K": self.K,
-        #     "M": 4,
-        #     "Prior": Prior,
-        #     "Mu": Mu_arr.ravel().tolist(),
-        #     "Sigma": Sigma_arr.ravel().tolist(),
+            "K": self.K,
+            "M": 4,
+            "Prior": Prior,
+            "Mu": Mu_arr.ravel().tolist(),
+            "Sigma": Sigma_arr.ravel().tolist(),
 
-        #     'A_ori': self.A_ori.ravel().tolist(),
-        #     'att_ori': self.q_att.as_quat().ravel().tolist(),
-        #     'q_init': self.q_in[0].as_quat().ravel().tolist(),
-        #     "gripper_open": 0
-        # }
+            'A_ori': self.A_ori.ravel().tolist(),
+            'att_ori': self.q_att.as_quat().ravel().tolist(),
+            'q_init': self.q_in[0].as_quat().ravel().tolist(),
+            "gripper_open": 0
+        }
 
-        # write_json(json_output, self.output_path)
-
-        pass
+        if len(args) == 0:
+            write_json(json_output, self.output_path)
+        else:
+            write_json(json_output, os.path.join(args[0], '1.json'))

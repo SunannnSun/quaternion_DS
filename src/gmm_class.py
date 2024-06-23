@@ -116,9 +116,9 @@ class gmm_class:
 
         assignment_arr = self.assignment_arr
 
-        Prior   = [0] * self.K
-        Mu      = [R.identity()] * self.K 
-        Sigma   = [np.zeros((self.N, self.N), dtype=np.float32)] * self.K
+        Prior   = [0] *  (2 * self.K)
+        Mu      = [R.identity()] * (2 * self.K)
+        Sigma   = [np.zeros((self.N, self.N), dtype=np.float32)] * (2 * self.K)
 
         gaussian_list = [] 
         dual_gaussian_list = []
@@ -128,10 +128,9 @@ class gmm_class:
 
             q_diff = riem_log(q_k_mean, q_k) 
 
-            Prior[k]  = len(q_k)/self.M
+            Prior[k]  = len(q_k)/(2 * self.M)
             Mu[k]     = q_k_mean
             Sigma_k   = q_diff.T @ q_diff / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
-            # Sigma[k]  = Sigma_k
             Sigma[k]  = adjust_cov(Sigma_k)
 
             gaussian_list.append(
@@ -143,19 +142,22 @@ class gmm_class:
                 }
             )
 
-
-            Mu_k     = R.from_quat(-q_k_mean.as_quat())
             q_k_dual  = [R.from_quat(-q.as_quat()) for q in q_k]
-            q_diff_dual = riem_log(Mu_k, q_k_dual) 
-            Sigma_k  = q_diff_dual.T @ q_diff_dual / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
-            Sigma_k  = adjust_cov(Sigma_k)
+            q_k_mean_dual     = R.from_quat(-q_k_mean.as_quat())
+
+            q_diff_dual = riem_log(q_k_mean_dual, q_k_dual) 
+            Prior[self.K + k] = Prior[k]
+            Mu[self.K + k]     = q_k_mean_dual
+            Sigma_k_dual = q_diff_dual.T @ q_diff_dual / (len(q_k_dual)-1)  + 10E-6 * np.eye(self.N)
+            Sigma[self.K+k]  = adjust_cov(Sigma_k_dual)
+
 
             dual_gaussian_list.append(
                 {   
-                    "prior" : Prior[k],
-                    "mu"    : Mu_k,
-                    "sigma" : Sigma_k,
-                    "rv"    : multivariate_normal(np.zeros(4), Sigma_k, allow_singular=True)
+                    "prior" : Prior[self.K + k],
+                    "mu"    : Mu[self.K + k],
+                    "sigma" : Sigma[self.K+k],
+                    "rv"    : multivariate_normal(np.zeros(4), Sigma[self.K+k], allow_singular=True)
                 }
             )
 
