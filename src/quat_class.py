@@ -27,7 +27,7 @@ def compute_ang_vel(q_k, q_kp1, dt=0.01):
 
 
 class quat_class:
-    def __init__(self, q_in:list,  q_out:list, q_att:R, K_init:int) -> None:
+    def __init__(self, q_in:list,  q_out:list, q_att:R, dt, K_init:int) -> None:
         """
         Parameters:
         ----------
@@ -36,6 +36,8 @@ class quat_class:
             q_out (list):           M-length List of Rotation objects for ORIENTATION OUTPUT
 
             q_att (Rotation):       Single Rotation object for ORIENTATION ATTRACTOR
+
+            dt:                     TIME DIFFERENCE in differentiating ORIENTATION
             
             K_init:                 Inital number of GAUSSIAN COMPONENTS
 
@@ -49,6 +51,7 @@ class quat_class:
         self.q_out = q_out
         self.q_att = q_att
 
+        self.dt = dt
         self.K_init = K_init
         self.M = len(q_in)
         self.N = 4
@@ -92,7 +95,7 @@ class quat_class:
 
 
 
-    def sim(self, q_init, dt, step_size):
+    def sim(self, q_init, step_size):
         q_test = [q_init]
         gamma_test = []
         omega_test = []
@@ -105,7 +108,7 @@ class quat_class:
             
             q_in  = q_test[i]
 
-            q_next, gamma, omega = self._step(q_in, dt, step_size)
+            q_next, gamma, omega = self._step(q_in, step_size)
 
             q_test.append(q_next)        
             gamma_test.append(gamma[:, 0])
@@ -117,7 +120,7 @@ class quat_class:
         
 
 
-    def _step(self, q_in, dt, step_size):
+    def _step(self, q_in, step_size):
         """ Integrate forward by one time step """
 
         # read parameters
@@ -139,7 +142,7 @@ class quat_class:
         q_out_body = quat_tools.parallel_transport(q_att, q_in, q_out_att.T)
         q_out_q    = quat_tools.riem_exp(q_in, q_out_body) 
         q_out      = R.from_quat(q_out_q.reshape(4,))
-        omega      = compute_ang_vel(q_in, q_out, dt)  
+        omega      = compute_ang_vel(q_in, q_out, self.dt)  
 
 
         # dual cover
@@ -151,7 +154,7 @@ class quat_class:
         q_out_body_dual = quat_tools.parallel_transport(q_att_dual, q_in, q_out_att_dual.T)
         q_out_q_dual    = quat_tools.riem_exp(q_in, q_out_body_dual) 
         q_out_dual      = R.from_quat(q_out_q_dual.reshape(4,))
-        omega           += compute_ang_vel(q_in, q_out_dual, dt)  
+        omega           += compute_ang_vel(q_in, q_out_dual, self.dt)  
         
         
         # propagate forward
@@ -188,7 +191,7 @@ class quat_class:
 
             'A_ori': self.A_ori.ravel().tolist(),
             'att_ori': self.q_att.as_quat().ravel().tolist(),
-            'q_init': self.q_in[0].as_quat().ravel().tolist(),
+            "dt": self.dt,
             "gripper_open": 0
         }
 

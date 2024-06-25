@@ -132,6 +132,7 @@ class gmm_class:
             Mu[k]     = q_k_mean
             Sigma_k   = q_diff.T @ q_diff / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
             Sigma[k]  = adjust_cov(Sigma_k)
+            # Sigma[k]  = Sigma_k
 
             gaussian_list.append(
                 {   
@@ -150,6 +151,7 @@ class gmm_class:
             Mu[self.K + k]     = q_k_mean_dual
             Sigma_k_dual = q_diff_dual.T @ q_diff_dual / (len(q_k_dual)-1)  + 10E-6 * np.eye(self.N)
             Sigma[self.K+k]  = adjust_cov(Sigma_k_dual)
+            # Sigma[self.K+k]  = Sigma_k_dual
 
 
             dual_gaussian_list.append(

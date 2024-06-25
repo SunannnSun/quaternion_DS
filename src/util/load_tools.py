@@ -145,15 +145,13 @@ def load_npy():
 
     p_raw = [traj[i, :3, -1] for i in range(traj.shape[0])]
 
+    """provide dt"""
+    # dt = 0.07
 
-
-    T = 10
-
+    """or provide T"""
+    T = 5
     dt = T/traj.shape[0]
+
     t_raw = [dt*i for i in range(traj.shape[0])]
 
-
-    p_in = np.vstack(p_raw)
-    # p_in[:, -1] = p_in[:, -1] + 0.005 
-
-    return [p_in], [q_raw], [t_raw], dt
+    return [np.vstack(p_raw)], [q_raw], [t_raw], dt
