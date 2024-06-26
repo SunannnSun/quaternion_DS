@@ -15,8 +15,8 @@ from .plot_tools import *
 def _compute_ang_vel(q_i, q_ip1, dt=0.01):
     """  Compute angular velocity """
 
-    dq = q_i.inv() * q_ip1    # from q_i to q_ip1 in body frame
-    # dq = q_kp1 * q_k.inv()    # from q_i to q_ip1 in fixed frame
+    # dq = q_i.inv() * q_ip1    # from q_i to q_ip1 in body frame
+    dq = q_ip1 * q_i.inv()    # from q_i to q_ip1 in fixed frame
 
     dq = dq.as_rotvec() 
     w  = dq / dt
