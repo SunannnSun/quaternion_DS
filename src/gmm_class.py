@@ -149,7 +149,8 @@ class gmm_class:
             q_diff_dual = riem_log(q_k_mean_dual, q_k_dual) 
             Prior[self.K + k] = Prior[k]
             Mu[self.K + k]     = q_k_mean_dual
-            Sigma_k_dual = q_diff_dual.T @ q_diff_dual / (len(q_k_dual)-1)  + 10E-6 * np.eye(self.N)
+            # Sigma_k_dual = q_diff_dual.T @ q_diff_dual / (len(q_k_dual)-1)  + 10E-6 * np.eye(self.N)
+            Sigma_k_dual = Sigma_k
             Sigma[self.K+k]  = adjust_cov(Sigma_k_dual)
             # Sigma[self.K+k]  = Sigma_k_dual
 
@@ -171,6 +172,69 @@ class gmm_class:
         self.Prior  = Prior
         self.Mu     = Mu
         self.Sigma  = Sigma
+
+
+
+    def elasticUpdate(self, new_ori, Prior_new, Mu_new, Sigma_new):
+        self.q_in = new_ori
+        self.M = len(self.q_in)
+
+        Prior   = [0] *  (2 * self.K)
+        Mu      = [R.identity()] * (2 * self.K)
+        Sigma   = [np.zeros((self.N, self.N), dtype=np.float32)] * (2 * self.K)
+
+
+        gaussian_list = [] 
+        dual_gaussian_list = []
+        for k in range(self.K):
+
+            Prior[k]  = Prior_new[k]/(2)
+            Mu[k]     = Mu_new[k]
+            Sigma_k   = Sigma_new[k]
+            Sigma[k]  = adjust_cov(Sigma_k)
+            # Sigma[k]  = Sigma_k
+
+            gaussian_list.append(
+                {   
+                    "prior" : Prior[k],
+                    "mu"    : Mu[k],
+                    "sigma" : Sigma[k],
+                    "rv"    : multivariate_normal(np.zeros(4), Sigma[k], allow_singular=True)
+                }
+            )
+
+            # q_k_dual  = [R.from_quat(-q.as_quat()) for q in q_k]
+            q_k_mean_dual     = R.from_quat(-Mu[k].as_quat())
+
+            # q_diff_dual = riem_log(q_k_mean_dual, q_k_dual) 
+            Prior[self.K + k] = Prior[k]
+            Mu[self.K + k]    = q_k_mean_dual
+            Sigma_k_dual     = Sigma_k
+            Sigma[self.K+k]  = adjust_cov(Sigma_k_dual)
+            # Sigma[self.K+k]  = Sigma_k_dual
+
+
+            dual_gaussian_list.append({   
+                    "prior" : Prior[self.K + k],
+                    "mu"    : Mu[self.K + k],
+                    "sigma" : Sigma[self.K+k],
+                    "rv"    : multivariate_normal(np.zeros(4), Sigma[self.K+k], allow_singular=True)
+                }
+            )
+
+
+        self.gaussian_list = gaussian_list
+        self.dual_gaussian_list = dual_gaussian_list
+
+
+        self.Prior  = Prior
+        self.Mu     = Mu
+        self.Sigma  = Sigma
+
+        dual_gamma = self.logProb(new_ori) # 2K by M
+
+        return dual_gamma[:self.K, :] # K by M; always remain the first half
+
 
 
 

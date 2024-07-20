@@ -87,11 +87,24 @@ class quat_class:
 
 
 
-
     def begin(self):
         self._cluster()
         self._optimize()
         # self._logOut()
+
+
+    def elasticUpdate(self, new_ori, new_ori_out, Prior, Mu, Sigma):
+        gamma = self.gmm.elasticUpdate(new_ori, Prior, Mu, Sigma)
+
+        A_ori = optimize_tools.optimize_ori(new_ori, new_ori_out, self.q_att, gamma)
+
+        q_in_dual   = [R.from_quat(-q.as_quat()) for q in new_ori]
+        q_out_dual  = [R.from_quat(-q.as_quat()) for q in new_ori_out]
+        q_att_dual =  R.from_quat(-self.q_att.as_quat())
+        A_ori_dual = optimize_tools.optimize_ori(q_in_dual, q_out_dual, q_att_dual, gamma)
+
+        self.A_ori = np.concatenate((A_ori, A_ori_dual), axis=0)
+
 
 
 
