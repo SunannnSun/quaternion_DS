@@ -7,7 +7,7 @@ from .gmm_class import gmm_class
 
 
 
-def write_json(data, path):
+def _write_json(data, path):
     with open(path, "w") as json_file:
         json.dump(data, json_file, indent=4)
 
@@ -179,7 +179,8 @@ class quat_class:
     
 
 
-    def _logOut(self, *args): 
+    def _logOut(self, write_json, *args): 
+        print(args)
 
         Prior = self.gmm.Prior
         Mu    = self.gmm.Mu
@@ -208,7 +209,10 @@ class quat_class:
             "gripper_open": 0
         }
 
-        if len(args) == 0:
-            write_json(json_output, self.output_path)
-        else:
-            write_json(json_output, os.path.join(args[0], '1.json'))
+        if write_json:  
+            if len(args) == 0:
+                _write_json(json_output, self.output_path)
+            else:
+                _write_json(json_output, os.path.join(args[0], '1.json'))
+
+        return json_output
