@@ -182,8 +182,9 @@ class gmm_class:
         Prior   = [0] *  (2 * self.K)
         Mu      = [R.identity()] * (2 * self.K)
         Sigma   = [np.zeros((self.N, self.N), dtype=np.float32)] * (2 * self.K)
-
-
+        Sigma_new = self.Sigma
+        Mu_new = self.Mu
+        
         gaussian_list = [] 
         dual_gaussian_list = []
         for k in range(self.K):
@@ -191,8 +192,8 @@ class gmm_class:
             Prior[k]  = Prior_new[k]/(2)
             Mu[k]     = Mu_new[k]
             Sigma_k   = Sigma_new[k]
-            Sigma[k]  = adjust_cov(Sigma_k)
-            # Sigma[k]  = Sigma_k
+            # Sigma[k]  = adjust_cov(Sigma_k)
+            Sigma[k]  = Sigma_k
 
             gaussian_list.append(
                 {   
@@ -210,8 +211,8 @@ class gmm_class:
             Prior[self.K + k] = Prior[k]
             Mu[self.K + k]    = q_k_mean_dual
             Sigma_k_dual     = Sigma_k
-            Sigma[self.K+k]  = adjust_cov(Sigma_k_dual)
-            # Sigma[self.K+k]  = Sigma_k_dual
+            # Sigma[self.K+k]  = adjust_cov(Sigma_k_dual)
+            Sigma[self.K+k]  = Sigma_k_dual
 
 
             dual_gaussian_list.append({   
@@ -226,7 +227,7 @@ class gmm_class:
         self.gaussian_list = gaussian_list
         self.dual_gaussian_list = dual_gaussian_list
 
-
+ 
         self.Prior  = Prior
         self.Mu     = Mu
         self.Sigma  = Sigma

@@ -93,13 +93,19 @@ class quat_class:
         # self._logOut()
 
 
-    def elasticUpdate(self, new_ori, new_ori_out, Prior, Mu, Sigma):
-        gamma = self.gmm.elasticUpdate(new_ori, Prior, Mu, Sigma)
+    def elasticUpdate(self, new_q_in, new_q_out, gmm_struct_ori, att_ori_new):
+        # self.q_att = att_ori_new
+        Prior = gmm_struct_ori["Prior"]
+        Mu = gmm_struct_ori["Mu"]
+        Sigma = gmm_struct_ori["Sigma"]
 
-        A_ori = optimize_tools.optimize_ori(new_ori, new_ori_out, self.q_att, gamma)
+        gamma = self.gmm.elasticUpdate(new_q_in, Prior, Mu, Sigma)
 
-        q_in_dual   = [R.from_quat(-q.as_quat()) for q in new_ori]
-        q_out_dual  = [R.from_quat(-q.as_quat()) for q in new_ori_out]
+        print(gamma)
+        A_ori = optimize_tools.optimize_ori(new_q_in, new_q_out, self.q_att, gamma)
+
+        q_in_dual   = [R.from_quat(-q.as_quat()) for q in new_q_in]
+        q_out_dual  = [R.from_quat(-q.as_quat()) for q in new_q_out]
         q_att_dual =  R.from_quat(-self.q_att.as_quat())
         A_ori_dual = optimize_tools.optimize_ori(q_in_dual, q_out_dual, q_att_dual, gamma)
 
@@ -206,6 +212,7 @@ class quat_class:
             'A_ori': self.A_ori.ravel().tolist(),
             'att_ori': self.q_att.as_quat().ravel().tolist(),
             "dt": self.dt,
+            'q_0': self.q_in[0].as_quat().ravel().tolist(),
             "gripper_open": 0
         }
 
