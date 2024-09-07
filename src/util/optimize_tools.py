@@ -14,16 +14,16 @@ def optimize_ori(q_in, q_out, q_att, postProb):
 
     K, _ = postProb.shape
     N = 4
-
+    max_norm = 0.5
     A_vars = []
     constraints = []
     for k in range(K):
         A_vars.append(cp.Variable((N, N), symmetric=False))
 
-        constraints += [A_vars[k]<< np.zeros((4, 4))]
+        # constraints += [A_vars[k]<< np.zeros((4, 4))]
         
-        # constraints += [A_vars[k].T + A_vars[k] << np.zeros((4, 4))]
-        # constraints += [cp.norm(A_vars[k], 'fro') <= max_norm]
+        constraints += [A_vars[k].T + A_vars[k] << np.zeros((4, 4))]
+        constraints += [cp.norm(A_vars[k], 'fro') <= max_norm]
         
     for k in range(K):
         q_pred_k = A_vars[k] @ q_in_att.T

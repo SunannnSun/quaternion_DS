@@ -103,7 +103,10 @@ class quat_class:
 
         print(gamma)
         A_ori = optimize_tools.optimize_ori(new_q_in, new_q_out, self.q_att, gamma)
-
+        print("old_A_ori", self.A_ori)
+        print("new_A_ori", A_ori)
+        for k in range (self.K):
+            print("last norm", np.linalg.norm(A_ori[k]))
         q_in_dual   = [R.from_quat(-q.as_quat()) for q in new_q_in]
         q_out_dual  = [R.from_quat(-q.as_quat()) for q in new_q_out]
         q_att_dual =  R.from_quat(-self.q_att.as_quat())
