@@ -94,7 +94,7 @@ class quat_class:
 
 
     def elasticUpdate(self, new_q_in, new_q_out, gmm_struct_ori, att_ori_new):
-        # self.q_att = att_ori_new
+        self.q_att = att_ori_new
         Prior = gmm_struct_ori["Prior"]
         Mu = gmm_struct_ori["Mu"]
         Sigma = gmm_struct_ori["Sigma"]

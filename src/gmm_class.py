@@ -119,6 +119,7 @@ class gmm_class:
         Prior   = [0] *  (2 * self.K)
         Mu      = [R.identity()] * (2 * self.K)
         Sigma   = [np.zeros((self.N, self.N), dtype=np.float32)] * (2 * self.K)
+        Sigma_gt = [np.zeros((self.N, self.N), dtype=np.float32)] * (self.K)  # for elastic update only; only first half cover needed
 
         gaussian_list = [] 
         dual_gaussian_list = []
@@ -133,6 +134,7 @@ class gmm_class:
             Sigma_k   = q_diff.T @ q_diff / (len(q_k)-1)  + 10E-6 * np.eye(self.N)
             Sigma[k]  = adjust_cov(Sigma_k)
             # Sigma[k]  = Sigma_k
+            Sigma_gt[k] = q_diff.T @ q_diff / (len(q_k)-1) 
 
             gaussian_list.append(
                 {   
@@ -173,7 +175,8 @@ class gmm_class:
         self.Mu     = Mu
         self.Sigma  = Sigma
 
-
+        self.Sigma_gt = Sigma_gt
+        
 
     def elasticUpdate(self, new_ori, Prior_new, Mu_new, Sigma_new):
         self.q_in = new_ori
